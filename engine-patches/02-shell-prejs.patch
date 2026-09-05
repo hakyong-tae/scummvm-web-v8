@@ -1,0 +1,47 @@
+diff --git a/dists/emscripten/custom_shell-pre.js b/dists/emscripten/custom_shell-pre.js
+index c567e001..3041cdcb 100644
+--- a/dists/emscripten/custom_shell-pre.js
++++ b/dists/emscripten/custom_shell-pre.js
+@@ -1,25 +1,22 @@
+ /*global Module*/
+-Module["arguments"] = [];
+-
+-// Add all parameters passed via the fragment identifier
+-if (window.location.hash.length > 0) {
+-    params = decodeURI(window.location.hash.substring(1)).split(" ")
+-    params.forEach((param) => {
+-        Module["arguments"].push(param);
+-    })
++// scummvm-web-v8: keep arguments the page already set; hash fallback for ad-hoc testing
++if (!Array.isArray(Module["arguments"])) Module["arguments"] = [];
++if (Module["arguments"].length === 0 && window.location.hash.length > 0) {
++    var params = decodeURI(window.location.hash.substring(1)).split(" ");
++    params.forEach((param) => { Module["arguments"].push(param); });
+ }
+ 
+-// MIDI support
++// MIDI support — opt-in only (the permission prompt is hostile UX for a single-game page)
+ var midiOutputMap;
+-if (!("requestMIDIAccess" in navigator)) {
+-	console.error("No MIDI support in your browser.");
+-} else {
+-	navigator
+-		.requestMIDIAccess({ sysex: true, software: true })
+-		.then((midiAccess) => {
+-			midiOutputMap = midiAccess.outputs;
+-			midiAccess.onstatechange = (e) => {
+-				midiOutputMap = e.target.outputs;
+-			};
+-		});
++if (Module["enableWebMIDI"] === true) {
++    if (!("requestMIDIAccess" in navigator)) {
++        console.error("No MIDI support in your browser.");
++    } else {
++        navigator
++            .requestMIDIAccess({ sysex: true, software: true })
++            .then((midiAccess) => {
++                midiOutputMap = midiAccess.outputs;
++                midiAccess.onstatechange = (e) => { midiOutputMap = e.target.outputs; };
++            });
++    }
+ }

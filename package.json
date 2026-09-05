@@ -1,0 +1,23 @@
+{
+  "name": "scummvm-web-v8",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lure of the Temptress in the browser — ScummVM (GPLv3) Emscripten build + DOM text layer for Korean subtitles",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "engine:build": "bash engine-patches/build.sh",
+    "game:fetch": "bash tools/fetch-game.sh",
+    "font:fetch": "bash tools/fetch-font.sh",
+    "data:stage": "bash tools/stage-data.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vite": "^6.4.3",
+    "vitest": "^3.0.0"
+  }
+}
