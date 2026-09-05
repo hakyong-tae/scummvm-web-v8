@@ -37,8 +37,18 @@ await page.mouse.click(gx(160), gy(100)); await sleep(2500)
 await page.keyboard.press('Escape'); await sleep(2500)
 await page.keyboard.press('Escape'); await sleep(4000)
 await page.screenshot({ path: outDir + 'm2-room.png' })
-// 첫 방: 감옥 문(왼콽 벽) 클릭 → "Look at Cell door" + 설명 대화창
-await page.mouse.click(gx(88), gy(130)); await sleep(3000)
+// 첫 방: 감옥 문(88,130)에서 우클릭 홀드 → 동사 팝업(버튼을 누른 동안 표시) → 놓으면 선택된 "Look" 실행 → 설명 대화창
+const dump = () => page.evaluate(() => (window.__lureText || []).map(r => r.t + '@' + r.x + ',' + r.y))
+await page.mouse.move(gx(88), gy(130)); await sleep(800)
+await page.mouse.down({ button: 'right' }); await sleep(2000)
+const menuState = await dump(); console.log('verb popup (held):', JSON.stringify(menuState))
+await page.screenshot({ path: outDir + 'm2-menu.png' })
+await page.mouse.up({ button: 'right' }); await sleep(6000)
+const dialogState = await dump(); console.log('after Look:', JSON.stringify(dialogState))
+await page.screenshot({ path: outDir + 'm2-dialog.png' })
+await page.mouse.click(gx(160), gy(180)); await sleep(2500)   // 대화창 닫기
+const closedState = await dump(); console.log('after close:', JSON.stringify(closedState))
+await page.screenshot({ path: outDir + 'm2-closed.png' })
 const state = await page.evaluate(() => ({
   recs: (window.__lureText || []),
   spans: [...document.querySelectorAll('#textlayer span')].map(s => ({ t: s.textContent, left: s.style.left, top: s.style.top, font: s.style.fontSize })),
@@ -52,4 +62,6 @@ console.log('errors:', errs.length, errs.slice(0, 5))
 const perf = logs.filter(l => l.includes('[perf]'))
 console.log('perf:', perf.slice(-2))
 await browser.close()
-process.exit(state.recs.length >= 2 && state.spans.length === state.recs.length && errs.length === 0 ? 0 : 1)
+const ok = menuState.length >= 2 && dialogState.length >= 3 && closedState.length < dialogState.length && state.spans.length === state.recs.length && errs.length === 0
+console.log(ok ? 'SMOKE OK' : 'SMOKE FAIL')
+process.exit(ok ? 0 : 1)
