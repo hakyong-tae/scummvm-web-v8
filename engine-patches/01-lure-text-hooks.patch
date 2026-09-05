@@ -1,0 +1,338 @@
+diff --git a/engines/lure/module.mk b/engines/lure/module.mk
+index 7aae9073..7d56d380 100644
+--- a/engines/lure/module.mk
++++ b/engines/lure/module.mk
+@@ -22,7 +22,8 @@ MODULE_OBJS := \
+ 	scripts.o \
+ 	sound.o \
+ 	strings.o \
+-	surface.o
++	surface.o \
++	webtext.o
+ 
+ # This module can be built as a plugin
+ ifeq ($(ENABLE_LURE), DYNAMIC_PLUGIN)
+diff --git a/engines/lure/screen.cpp b/engines/lure/screen.cpp
+index 7e4e76d9..3980f7d1 100644
+--- a/engines/lure/screen.cpp
++++ b/engines/lure/screen.cpp
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include "lure/screen.h"
++#include "lure/webtext.h"
+ #include "lure/luredefs.h"
+ #include "lure/memory.h"
+ #include "lure/disk.h"
+@@ -180,11 +181,13 @@ void Screen::empty() {
+ 
+ void Screen::update() {
+ 	_system.copyRectToScreen(screen_raw(), FULL_SCREEN_WIDTH, 0, 0, FULL_SCREEN_WIDTH, FULL_SCREEN_HEIGHT);
++	WebText::present(_screen, 0, 0, FULL_SCREEN_WIDTH - 1, FULL_SCREEN_HEIGHT - 1, 0, 0);
+ 	_system.updateScreen();
+ }
+ 
+ void Screen::updateArea(uint16 x, uint16 y, uint16 w, uint16 h) {
+ 	_system.copyRectToScreen(screen_raw(), FULL_SCREEN_WIDTH, x, y, w, h);
++	WebText::present(_screen, x, y, x + w - 1, y + h - 1, x, y);
+ 	_system.updateScreen();
+ }
+ 
+diff --git a/engines/lure/strings.cpp b/engines/lure/strings.cpp
+index fbca8428..d68bd27a 100644
+--- a/engines/lure/strings.cpp
++++ b/engines/lure/strings.cpp
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include "lure/strings.h"
++#include "lure/webtext.h"
+ #include "lure/disk.h"
+ #include "lure/lure.h"
+ #include "lure/res.h"
+@@ -240,7 +241,7 @@ void StringData::getString(uint16 stringId, char *dest, const char *hotspotName,
+ 
+ 	debugC(ERROR_DETAILED, kLureDebugStrings, "String data %xh/%.2xh val=%.2xh EOS",
+ 		charOffset, charBitMask, ch);
+-	*destPos = '\0';
++	*destPos = '\0';	WebText::notifyString(stringId, dest);
+ }
+ 
+ // getName
+diff --git a/engines/lure/surface.cpp b/engines/lure/surface.cpp
+index 8b664cbd..b9938ec2 100644
+--- a/engines/lure/surface.cpp
++++ b/engines/lure/surface.cpp
+@@ -28,6 +28,7 @@
+ #include "lure/sound.h"
+ #include "lure/strings.h"
+ #include "lure/surface.h"
++#include "lure/webtext.h"
+ #include "common/endian.h"
+ #include "common/config-manager.h"
+ #include "common/text-to-speech.h"
+@@ -99,6 +100,7 @@ Surface::Surface(uint16 wdth, uint16 hght): _data(Memory::allocate(wdth*hght)),
+ }
+ 
+ Surface::~Surface() {
++	WebText::forget(this);
+ 	delete _data;
+ }
+ 
+@@ -284,6 +286,10 @@ void Surface::writeSubstring(uint16 x, uint16 y, Common::String line, int len,
+ 	if (color == DEFAULT_TEXT_COLOR)
+ 		color = LureEngine::getReference().isEGA() ? EGA_DIALOG_TEXT_COLOR : VGA_DIALOG_TEXT_COLOR;
+ 
++	const uint16 startX = x;
++	const uint8 bg = (y < _height && x < _width) ? _data->data()[y * _width + x] : 0;
++	int drawn = 0;
++
+ 	for (int index = 0; (index < len) && (*sPtr != '\0'); ++index, ++sPtr) {
+ 		int charSize = varLength ? fontSize[(uint8)*sPtr - 32] + 2 : FONT_WIDTH;
+ 		if (x + charSize >= width())
+@@ -295,7 +301,10 @@ void Surface::writeSubstring(uint16 x, uint16 y, Common::String line, int len,
+ 
+ 		// Move to after the character in preparation for the next character
+ 		x += charSize;
++		++drawn;
+ 	}
++
++	WebText::record(this, startX, y, line, drawn, color, x - startX, bg);
+ }
+ 
+ void Surface::transparentCopyTo(Surface *dest) {
+@@ -324,6 +333,7 @@ void Surface::copyTo(Surface *dest, uint16 x, uint16 y) {
+ 		uint32 dataSize = dest->data().size() - (y * _width);
+ 		if (dataSize > _data->size()) dataSize = _data->size();
+ 		dest->data().copyFrom(_data, 0, y * _width, dataSize);
++		WebText::transfer(this, dest, 0, 0, _width - 1, _height - 1, 0, y);
+ 	} else {
+ 		// Use slower transfer
+ 		Common::Rect rect;
+@@ -335,6 +345,7 @@ void Surface::copyTo(Surface *dest, uint16 x, uint16 y) {
+ 
+ void Surface::copyTo(Surface *dest, const Common::Rect &srcBounds,
+ 					 uint16 destX, uint16 destY, int transparentColor) {
++	WebText::transfer(this, dest, srcBounds.left, srcBounds.top, srcBounds.right, srcBounds.bottom, destX, destY);
+ 	int numBytes = srcBounds.right - srcBounds.left + 1;
+ 	if (destX + numBytes > dest->width())
+ 		numBytes = dest->width() - destX;
+@@ -395,6 +406,7 @@ void Surface::refreshDialog() {
+ void Surface::copyToScreen(uint16 x, uint16 y) {
+ 	OSystem &system = *g_system;
+ 	system.copyRectToScreen(_data->data(), _width, x, y, _width, _height);
++	WebText::present(this, 0, 0, _width - 1, _height - 1, x, y);
+ 	system.updateScreen();
+ }
+ 
+@@ -404,6 +416,8 @@ void Surface::centerOnScreen() {
+ 	system.copyRectToScreen(_data->data(), _width,
+ 		(FULL_SCREEN_WIDTH - _width) / 2, (FULL_SCREEN_HEIGHT - _height) / 2,
+ 		_width, _height);
++	WebText::present(this, 0, 0, _width - 1, _height - 1,
++		(FULL_SCREEN_WIDTH - _width) / 2, (FULL_SCREEN_HEIGHT - _height) / 2);
+ 	system.updateScreen();
+ }
+ 
+diff --git a/engines/lure/webtext.cpp b/engines/lure/webtext.cpp
+new file mode 100644
+index 00000000..5504dd3a
+--- /dev/null
++++ b/engines/lure/webtext.cpp
+@@ -0,0 +1,162 @@
++/* scummvm-web-v8: see webtext.h. GPLv3, same as ScummVM. */
++#include "lure/webtext.h"
++#include "lure/surface.h"
++#include "lure/screen.h"
++#include "lure/palette.h"
++#include "common/array.h"
++#include "common/util.h"
++
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++#endif
++
++namespace Lure {
++namespace WebText {
++
++#ifdef __EMSCRIPTEN__
++
++struct Rec {
++	Surface *owner;      // surface the text currently lives on (nullptr = real screen)
++	int x, y, w, h;
++	Common::String text; // Latin-1 as produced by the engine
++	int color;           // palette index
++	uint8 bg;            // palette index sampled under the text before drawing
++};
++
++static Common::Array<Rec> g_recs;     // records on surfaces
++static Common::Array<Rec> g_screen;   // records on the real screen (screen coordinates)
++static Common::String g_lastJson;
++
++static bool intersects(const Rec &a, int x, int y, int w, int h) {
++	return !(x >= a.x + a.w || x + w <= a.x || y >= a.y + a.h || y + h <= a.y);
++}
++
++static void removeIntersecting(Common::Array<Rec> &arr, Surface *owner, int x, int y, int w, int h) {
++	for (uint i = 0; i < arr.size();) {
++		if (arr[i].owner == owner && intersects(arr[i], x, y, w, h))
++			arr.remove_at(i);
++		else
++			++i;
++	}
++}
++
++void record(Surface *owner, int x, int y, const Common::String &text, int len, int color, int widthPx, uint8 bg) {
++	if (len <= 0 || widthPx <= 0)
++		return;
++	removeIntersecting(g_recs, owner, x, y, widthPx, 8);
++	Rec r;
++	r.owner = owner; r.x = x; r.y = y; r.w = widthPx; r.h = 8;
++	r.text = Common::String(text.c_str(), MIN<int>(len, (int)text.size()));
++	r.color = color; r.bg = bg;
++	g_recs.push_back(r);
++}
++
++void transfer(Surface *src, Surface *dest, int l, int t, int r, int b, int dx, int dy) {
++	if (src == dest)
++		return;
++	Common::Array<Rec> moved;
++	for (uint i = 0; i < g_recs.size(); ++i) {
++		const Rec &rc = g_recs[i];
++		if (rc.owner != src)
++			continue;
++		if (rc.x < l || rc.y < t || rc.x + rc.w - 1 > r || rc.y + rc.h - 1 > b)
++			continue; // only records fully inside the copied rect travel
++		Rec m = rc;
++		m.owner = dest; m.x = rc.x - l + dx; m.y = rc.y - t + dy;
++		moved.push_back(m);
++	}
++	removeIntersecting(g_recs, dest, dx, dy, r - l + 1, b - t + 1);
++	for (uint i = 0; i < moved.size(); ++i)
++		g_recs.push_back(moved[i]);
++}
++
++void forget(Surface *owner) {
++	for (uint i = 0; i < g_recs.size();) {
++		if (g_recs[i].owner == owner) g_recs.remove_at(i); else ++i;
++	}
++}
++
++// Text is considered gone once fewer than 4 pixels of its colour remain in its box.
++static bool stillVisible(Surface *s, const Rec &r) {
++	const byte *d = s->data().data();
++	int hits = 0;
++	for (int yy = r.y; yy < r.y + r.h && yy < s->height(); ++yy)
++		for (int xx = r.x; xx < r.x + r.w && xx < s->width(); ++xx)
++			if (d[yy * s->width() + xx] == r.color && ++hits >= 4)
++				return true;
++	return false;
++}
++
++static void appendJsonString(Common::String &out, const Common::String &s) {
++	out += '"';
++	for (uint i = 0; i < s.size(); ++i) {
++		uint8 c = (uint8)s[i];
++		if (c == '"' || c == '\\') { out += '\\'; out += (char)c; }
++		else if (c < 0x20) { out += ' '; }
++		else if (c < 0x80) { out += (char)c; }
++		else { out += (char)(0xC0 | (c >> 6)); out += (char)(0x80 | (c & 0x3F)); } // Latin-1 -> UTF-8
++	}
++	out += '"';
++}
++
++static void appendRgb(Common::String &out, uint8 idx) {
++	Palette &pal = Screen::getReference().getPalette();
++	if (idx >= pal.numEntries()) { out += "[0,0,0]"; return; }
++	const uint8 *p = pal.data() + idx * 4;
++	out += Common::String::format("[%d,%d,%d]", p[0], p[1], p[2]);
++}
++
++static void emit() {
++	Common::String json = "[";
++	for (uint i = 0; i < g_screen.size(); ++i) {
++		const Rec &r = g_screen[i];
++		if (i) json += ',';
++		json += Common::String::format("{\"x\":%d,\"y\":%d,\"w\":%d,\"h\":%d,\"t\":", r.x, r.y, r.w, r.h);
++		appendJsonString(json, r.text);
++		json += ",\"c\":"; appendRgb(json, (uint8)r.color);
++		json += ",\"b\":"; appendRgb(json, r.bg);
++		json += '}';
++	}
++	json += ']';
++	if (json == g_lastJson)
++		return;
++	g_lastJson = json;
++	EM_ASM({ if (Module['onLureText']) Module['onLureText'](UTF8ToString($0)); }, json.c_str());
++}
++
++void present(Surface *surface, int l, int t, int r, int b, int sx, int sy) {
++	for (uint i = 0; i < g_recs.size();) {
++		if (g_recs[i].owner == surface && !stillVisible(surface, g_recs[i])) g_recs.remove_at(i); else ++i;
++	}
++	removeIntersecting(g_screen, nullptr, sx, sy, r - l + 1, b - t + 1);
++	for (uint i = 0; i < g_recs.size(); ++i) {
++		const Rec &rc = g_recs[i];
++		if (rc.owner != surface) continue;
++		if (rc.x < l || rc.y < t || rc.x + rc.w - 1 > r || rc.y + rc.h - 1 > b) continue;
++		Rec m = rc;
++		m.owner = nullptr; m.x = rc.x - l + sx; m.y = rc.y - t + sy;
++		g_screen.push_back(m);
++	}
++	emit();
++}
++
++void notifyString(uint16 stringId, const char *text) {
++	Common::String utf8;
++	appendJsonString(utf8, Common::String(text));
++	// appendJsonString wraps in quotes; strip them (cheap reuse of the Latin-1 -> UTF-8 conversion)
++	Common::String bare(utf8.c_str() + 1, utf8.size() - 2);
++	EM_ASM({ if (Module['onLureString']) Module['onLureString']($0, UTF8ToString($1)); }, (int)stringId, bare.c_str());
++}
++
++#else // !__EMSCRIPTEN__
++
++void record(Surface *, int, int, const Common::String &, int, int, int, uint8) {}
++void transfer(Surface *, Surface *, int, int, int, int, int, int) {}
++void present(Surface *, int, int, int, int, int, int) {}
++void forget(Surface *) {}
++void notifyString(uint16, const char *) {}
++
++#endif
++
++} // namespace WebText
++} // namespace Lure
+diff --git a/engines/lure/webtext.h b/engines/lure/webtext.h
+new file mode 100644
+index 00000000..67126086
+--- /dev/null
++++ b/engines/lure/webtext.h
+@@ -0,0 +1,28 @@
++/* scummvm-web-v8: text records for the DOM subtitle layer (Emscripten only; no-ops elsewhere) */
++#ifndef LURE_WEBTEXT_H
++#define LURE_WEBTEXT_H
++
++#include "common/scummsys.h"
++#include "common/str.h"
++
++namespace Lure {
++
++class Surface;
++
++namespace WebText {
++
++// Surface::writeSubstring drew `len` chars of `text` at (x,y), `widthPx` wide, over background palette index `bg`.
++void record(Surface *owner, int x, int y, const Common::String &text, int len, int color, int widthPx, uint8 bg);
++// Pixels of `src` rect [l..r]x[t..b] were copied into `dest` at (dx,dy): move the records with them.
++void transfer(Surface *src, Surface *dest, int l, int t, int r, int b, int dx, int dy);
++// Pixels of `surface` rect [l..r]x[t..b] reached the real screen at (sx,sy).
++void present(Surface *surface, int l, int t, int r, int b, int sx, int sy);
++// Surface is being destroyed.
++void forget(Surface *owner);
++// StringData::getString decoded `text` for `stringId` (Latin-1).
++void notifyString(uint16 stringId, const char *text);
++
++} // namespace WebText
++} // namespace Lure
++
++#endif
