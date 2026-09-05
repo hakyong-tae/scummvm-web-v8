@@ -136,11 +136,13 @@ index 8b664cbd..b9938ec2 100644
  
 diff --git a/engines/lure/webtext.cpp b/engines/lure/webtext.cpp
 new file mode 100644
-index 00000000..5504dd3a
+index 00000000..23afa605
 --- /dev/null
 +++ b/engines/lure/webtext.cpp
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,164 @@
 +/* scummvm-web-v8: see webtext.h. GPLv3, same as ScummVM. */
++// emscripten.h uses libc symbols that ScummVM poisons via common/forbidden.h (same workaround as backends/platform/sdl/emscripten)
++#define FORBIDDEN_SYMBOL_ALLOW_ALL
 +#include "lure/webtext.h"
 +#include "lure/surface.h"
 +#include "lure/screen.h"
