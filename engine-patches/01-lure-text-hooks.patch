@@ -136,10 +136,10 @@ index 8b664cbd..b9938ec2 100644
  
 diff --git a/engines/lure/webtext.cpp b/engines/lure/webtext.cpp
 new file mode 100644
-index 00000000..23afa605
+index 00000000..ff77e964
 --- /dev/null
 +++ b/engines/lure/webtext.cpp
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,179 @@
 +/* scummvm-web-v8: see webtext.h. GPLv3, same as ScummVM. */
 +// emscripten.h uses libc symbols that ScummVM poisons via common/forbidden.h (same workaround as backends/platform/sdl/emscripten)
 +#define FORBIDDEN_SYMBOL_ALLOW_ALL
@@ -184,10 +184,25 @@ index 00000000..23afa605
 +	}
 +}
 +
++// A new line of text replaces an earlier record only on the same baseline (typewriter growth, status-line
++// updates). Dialogs use a 7px line pitch with 8px glyphs, so neighbouring lines overlap by one pixel row and
++// must NOT count as overwrites; stale records elsewhere are pruned by stillVisible() at present time.
++static void removeSameLine(Common::Array<Rec> &arr, Surface *owner, int x, int y, int w) {
++	for (uint i = 0; i < arr.size();) {
++		const Rec &a = arr[i];
++		bool sameLine = ABS(a.y - y) < 4;
++		bool xOverlap = !(x >= a.x + a.w || x + w <= a.x);
++		if (a.owner == owner && sameLine && xOverlap)
++			arr.remove_at(i);
++		else
++			++i;
++	}
++}
++
 +void record(Surface *owner, int x, int y, const Common::String &text, int len, int color, int widthPx, uint8 bg) {
 +	if (len <= 0 || widthPx <= 0)
 +		return;
-+	removeIntersecting(g_recs, owner, x, y, widthPx, 8);
++	removeSameLine(g_recs, owner, x, y, widthPx);
 +	Rec r;
 +	r.owner = owner; r.x = x; r.y = y; r.w = widthPx; r.h = 8;
 +	r.text = Common::String(text.c_str(), MIN<int>(len, (int)text.size()));
