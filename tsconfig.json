@@ -5,8 +5,18 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
-    "types": ["vite/client"],
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "types": [
+      "vite/client"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true
   },
-  "include": ["src", "tests"]
+  "include": [
+    "src",
+    "tests"
+  ]
 }
