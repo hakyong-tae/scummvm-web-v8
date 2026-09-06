@@ -6,7 +6,8 @@ import { layoutKorean, type Measure } from './kolayout'
 
 export type Translate = (rec: LureTextRecord) => string
 /** 블록(재조립된 영문 문단) → 번역. partial(0~1)은 타이프라이터 진행률 */
-export type TranslateBlock = (joined: string, block: TextBlock) => { text: string; partial?: number } | null
+import type { Resolved } from '../i18n/resolve'
+export type TranslateBlock = (lines: string[], block: TextBlock) => Resolved
 
 /** 엔진 텍스트 레코드를 캔버스 위 DOM으로 렌더. 레코드마다 배경 박스로 엔진 글리프를 덮고,
  *  translateBlock이 있으면 블록 단위로 한글을 재줄바꿈해 그 위에 그린다(없으면 영문 패스스루). */
@@ -44,19 +45,33 @@ export class TextLayer {
     const blocks = groupBlocks(this.current)
     const live = new Set<string>()
     for (const b of blocks) {
-      const tr = this.translateBlock?.(b.joined, b) ?? null
-      const key = `${b.x},${b.y},${b.joined}`
+      const tr = this.translateBlock?.(b.records.map(r => r.t), b) ?? null
       if (!tr) {
         for (const r of b.records) { const el = this.spans.get(recordKey(r)); if (el) el.textContent = this.translate(r) }
         continue
       }
       for (const r of b.records) { const el = this.spans.get(recordKey(r)); if (el) el.textContent = '' }
+      if ('lines' in tr) {
+        // 줄 단위(팝업 메뉴·선택지): 레코드마다 자기 자리에
+        b.records.forEach((r, i) => {
+          const key = `${r.x},${r.y},${r.t}`
+          live.add(key)
+          const box: TextBlock = { ...b, x: r.x, y: r.y, w: r.w, h: r.h, records: [r], joined: r.t }
+          this.placeKo(this.koDiv(key), box, tr.lines[i])
+        })
+        continue
+      }
+      const key = `${b.x},${b.y},${b.joined}`
       live.add(key)
-      let div = this.koDivs.get(key)
-      if (!div) { div = document.createElement('div'); div.className = 'ko'; this.root.appendChild(div); this.koDivs.set(key, div) }
-      this.placeKo(div, b, tr.text, tr.partial)
+      this.placeKo(this.koDiv(key), b, tr.text, tr.partial)
     }
     for (const [key, div] of this.koDivs) if (!live.has(key)) { div.remove(); this.koDivs.delete(key) }
+  }
+
+  private koDiv(key: string): HTMLDivElement {
+    let div = this.koDivs.get(key)
+    if (!div) { div = document.createElement('div'); div.className = 'ko'; this.root.appendChild(div); this.koDivs.set(key, div) }
+    return div
   }
 
   private measure: Measure = (text, fontPx) => {

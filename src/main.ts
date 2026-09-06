@@ -2,6 +2,7 @@ import { bootEngine } from './engine/loader'
 import { TextLayer } from './text/layer'
 import { KoDict, type EnDump, type KoData } from './i18n/dict'
 import { StatusComposer } from './i18n/status'
+import { resolveBlock } from './i18n/resolve'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const frame = document.getElementById('frame')!
@@ -55,13 +56,11 @@ async function loadKorean() {
     dict = new KoDict(en, ko)
     // S_FOR=35, S_TO=36, S_ON=37 (engines/lure/res_struct.h StringEnum)
     statusComposer = new StatusComposer(dict, en, ko, { for: 35, to: 36, on: 37 })
-    layer.setTranslateBlock((joined) => {
-      const d = dict!
-      const direct = d.lookup(joined) ?? statusComposer!.compose(joined)
-      if (direct) return { text: direct }
-      const p = d.lookupPrefix(joined)
-      return p ? { text: p.full, partial: p.ratio } : null
-    })
+    layer.setTranslateBlock((lines) => resolveBlock(lines, {
+      lookup: (s) => dict!.lookup(s),
+      compose: (s) => statusComposer!.compose(s),
+      prefix: (s) => dict!.lookupPrefix(s),
+    }))
   } catch (e) { console.warn('[i18n] 한글 데이터 로드 실패, 영문으로 진행', e) }
 }
 
