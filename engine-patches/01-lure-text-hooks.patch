@@ -39,7 +39,7 @@ index 7e4e76d9..3980f7d1 100644
  }
  
 diff --git a/engines/lure/strings.cpp b/engines/lure/strings.cpp
-index fbca8428..d68bd27a 100644
+index fbca8428..bbb4c552 100644
 --- a/engines/lure/strings.cpp
 +++ b/engines/lure/strings.cpp
 @@ -20,6 +20,7 @@
@@ -50,15 +50,114 @@ index fbca8428..d68bd27a 100644
  #include "lure/disk.h"
  #include "lure/lure.h"
  #include "lure/res.h"
-@@ -240,7 +241,7 @@ void StringData::getString(uint16 stringId, char *dest, const char *hotspotName,
+@@ -97,7 +98,7 @@ byte StringData::readBit() {
+ 	return result;
+ }
+ 
+-bool StringData::initPosition(uint16 stringId) {
++void StringData::resolveTable(uint16 stringId, int &table, uint16 &localId) {
+ 	uint16 roomNumber = Room::getReference().roomNumber();
+ 
+ 	if ((roomNumber >= 0x2A) && (stringId >= STRING_ID_RANGE) && (stringId < STRING_ID_UPPER))
+@@ -105,16 +106,28 @@ bool StringData::initPosition(uint16 stringId) {
+ 	if ((roomNumber < 0x2A) && (stringId >= STRING_ID_UPPER))
+ 		stringId = 0x76;
+ 
+-	if (stringId < STRING_ID_RANGE)
+-		_stringTable = _strings[0]->data();
+-	else if (stringId < STRING_ID_RANGE*2) {
+-		stringId -= STRING_ID_RANGE;
+-		_stringTable = _strings[1]->data();
++	if (stringId < STRING_ID_RANGE) {
++		table = 0; localId = stringId;
++	} else if (stringId < STRING_ID_RANGE*2) {
++		table = 1; localId = stringId - STRING_ID_RANGE;
+ 	} else {
+-		stringId -= STRING_ID_RANGE * 2;
+-		_stringTable = _strings[2]->data();
++		table = 2; localId = stringId - STRING_ID_RANGE * 2;
+ 	}
++}
++
++int StringData::tableStringCount(int table) {
++	const byte *tbl = _strings[table]->data();
++	return READ_LE_UINT16(tbl + 2) - READ_LE_UINT16(tbl);
++}
++
++bool StringData::initPosition(uint16 stringId) {
++	int table; uint16 localId;
++	resolveTable(stringId, table, localId);
++	_stringTable = _strings[table]->data();
++	return initPositionInTable(localId);
++}
+ 
++bool StringData::initPositionInTable(uint16 stringId) {
+ 	_srcPos = _stringTable + 4;
+ 
+ 	uint32 total = 0;
+@@ -240,7 +253,42 @@ void StringData::getString(uint16 stringId, char *dest, const char *hotspotName,
  
  	debugC(ERROR_DETAILED, kLureDebugStrings, "String data %xh/%.2xh val=%.2xh EOS",
  		charOffset, charBitMask, ch);
--	*destPos = '\0';
-+	*destPos = '\0';	WebText::notifyString(stringId, dest);
++	*destPos = '\0';	{
++		int wtTable; uint16 wtLocal;
++		resolveTable(stringId, wtTable, wtLocal);
++		WebText::notifyString(wtTable, wtLocal, dest, hotspotName, characterName);
++	}
++}
++
++// scummvm-web-v8: raw decode for the string dump. Mirrors getString() minus room remap and articles.
++bool StringData::getStringRaw(int table, uint16 localId, char *dest, const char *hotspotName, const char *characterName) {
++	dest[0] = '\0';
++	if (table < 0 || table > 2 || localId >= tableStringCount(table))
++		return false;
++	_stringTable = _strings[table]->data();
++	initPositionInTable(localId);
++	char *destPos = dest;
++	const char *limit = dest + MAX_DESC_SIZE - 2;
++	char ch = readCharacter();
++	while (ch != '\0' && destPos < limit) {
++		if (ch == '%') {
++			ch = readCharacter();
++			const char *p = (ch == '1') ? hotspotName : characterName;
++			if (p != nullptr) {
++				Common::strlcpy(destPos, p, limit - destPos);
++				destPos += strlen(destPos);
++			}
++		} else if ((uint8) ch >= 0xa0) {
++			const char *p = getName((uint8) ch - 0xa0);
++			Common::strlcpy(destPos, p, limit - destPos);
++			destPos += strlen(destPos);
++		} else {
++			*destPos++ = ch;
++		}
++		ch = readCharacter();
++	}
+ 	*destPos = '\0';
++	return true;
  }
  
  // getName
+diff --git a/engines/lure/strings.h b/engines/lure/strings.h
+index 88d9e348..9c20506e 100644
+--- a/engines/lure/strings.h
++++ b/engines/lure/strings.h
+@@ -64,6 +64,15 @@ public:
+ 		getString(stringId, dest, NULL, NULL);
+ 	}
+ 	char *getName(uint8 nameIndex);
++
++	// scummvm-web-v8: which table/local index a (room-dependent) stringId resolves to
++	static void resolveTable(uint16 stringId, int &table, uint16 &localId);
++	// scummvm-web-v8: decode straight from a table (no room remap), names as given, no articles
++	bool getStringRaw(int table, uint16 localId, char *dest, const char *hotspotName, const char *characterName);
++	int tableStringCount(int table);
++private:
++	bool initPositionInTable(uint16 localId);
++public:
+ };
+ 
+ } // namespace Lure
 diff --git a/engines/lure/surface.cpp b/engines/lure/surface.cpp
 index 8b664cbd..b9938ec2 100644
 --- a/engines/lure/surface.cpp
@@ -136,10 +235,10 @@ index 8b664cbd..b9938ec2 100644
  
 diff --git a/engines/lure/webtext.cpp b/engines/lure/webtext.cpp
 new file mode 100644
-index 00000000..ff77e964
+index 00000000..6d8477c4
 --- /dev/null
 +++ b/engines/lure/webtext.cpp
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,220 @@
 +/* scummvm-web-v8: see webtext.h. GPLv3, same as ScummVM. */
 +// emscripten.h uses libc symbols that ScummVM poisons via common/forbidden.h (same workaround as backends/platform/sdl/emscripten)
 +#define FORBIDDEN_SYMBOL_ALLOW_ALL
@@ -147,6 +246,9 @@ index 00000000..ff77e964
 +#include "lure/surface.h"
 +#include "lure/screen.h"
 +#include "lure/palette.h"
++#include "lure/strings.h"
++#include "lure/res.h"
++#include "lure/res_struct.h"
 +#include "common/array.h"
 +#include "common/util.h"
 +
@@ -251,6 +353,9 @@ index 00000000..ff77e964
 +	for (uint i = 0; i < s.size(); ++i) {
 +		uint8 c = (uint8)s[i];
 +		if (c == '"' || c == '\\') { out += '\\'; out += (char)c; }
++		else if (c == 0x01) { out += "{hotspot}"; }
++		else if (c == 0x02) { out += "{char}"; }
++		else if (c == '\n') { out += "\\n"; }
 +		else if (c < 0x20) { out += ' '; }
 +		else if (c < 0x80) { out += (char)c; }
 +		else { out += (char)(0xC0 | (c >> 6)); out += (char)(0x80 | (c & 0x3F)); } // Latin-1 -> UTF-8
@@ -283,7 +388,38 @@ index 00000000..ff77e964
 +	EM_ASM({ if (Module['onLureText']) Module['onLureText'](UTF8ToString($0)); }, json.c_str());
 +}
 +
++// Full string dump on request from the page (JS cannot call into wasm while Asyncify is suspended, so we poll here).
++static void maybeDump() {
++	if (!EM_ASM_INT({ return Module['lureDumpRequest'] ? 1 : 0; }))
++		return;
++	EM_ASM({ Module['lureDumpRequest'] = 0; });
++	StringData &sd = StringData::getReference();
++	StringList &sl = Resources::getReference().stringList();
++	static char buf[MAX_DESC_SIZE * 2];
++	Common::String json = "{\"list\":[";
++	for (int i = 0; i < sl.count(); ++i) {
++		if (i) json += ',';
++		appendJsonString(json, Common::String(sl.getString(i)));
++	}
++	json += "],\"tables\":[";
++	for (int t = 0; t < 3; ++t) {
++		if (t) json += ',';
++		json += '[';
++		int n = sd.tableStringCount(t);
++		for (int i = 0; i < n; ++i) {
++			if (i) json += ',';
++			buf[0] = '\0';
++			sd.getStringRaw(t, (uint16)i, buf, "\x01", "\x02");
++			appendJsonString(json, Common::String(buf));
++		}
++		json += ']';
++	}
++	json += "]}";
++	EM_ASM({ if (Module['onLureDump']) Module['onLureDump'](UTF8ToString($0)); }, json.c_str());
++}
++
 +void present(Surface *surface, int l, int t, int r, int b, int sx, int sy) {
++	maybeDump();
 +	for (uint i = 0; i < g_recs.size();) {
 +		if (g_recs[i].owner == surface && !stillVisible(surface, g_recs[i])) g_recs.remove_at(i); else ++i;
 +	}
@@ -299,12 +435,16 @@ index 00000000..ff77e964
 +	emit();
 +}
 +
-+void notifyString(uint16 stringId, const char *text) {
-+	Common::String utf8;
-+	appendJsonString(utf8, Common::String(text));
-+	// appendJsonString wraps in quotes; strip them (cheap reuse of the Latin-1 -> UTF-8 conversion)
-+	Common::String bare(utf8.c_str() + 1, utf8.size() - 2);
-+	EM_ASM({ if (Module['onLureString']) Module['onLureString']($0, UTF8ToString($1)); }, (int)stringId, bare.c_str());
++static Common::String toUtf8(const char *latin1) {
++	Common::String q;
++	appendJsonString(q, Common::String(latin1 ? latin1 : ""));
++	return Common::String(q.c_str() + 1, q.size() - 2); // strip the quotes added by appendJsonString
++}
++
++void notifyString(int table, uint16 localId, const char *text, const char *hotspotName, const char *characterName) {
++	Common::String t = toUtf8(text), h = toUtf8(hotspotName), c = toUtf8(characterName);
++	EM_ASM({ if (Module['onLureString']) Module['onLureString']($0, $1, UTF8ToString($2), UTF8ToString($3), UTF8ToString($4)); },
++		table, (int)localId, t.c_str(), h.c_str(), c.c_str());
 +}
 +
 +#else // !__EMSCRIPTEN__
@@ -313,7 +453,7 @@ index 00000000..ff77e964
 +void transfer(Surface *, Surface *, int, int, int, int, int, int) {}
 +void present(Surface *, int, int, int, int, int, int) {}
 +void forget(Surface *) {}
-+void notifyString(uint16, const char *) {}
++void notifyString(int, uint16, const char *, const char *, const char *) {}
 +
 +#endif
 +
@@ -321,7 +461,7 @@ index 00000000..ff77e964
 +} // namespace Lure
 diff --git a/engines/lure/webtext.h b/engines/lure/webtext.h
 new file mode 100644
-index 00000000..67126086
+index 00000000..79f67122
 --- /dev/null
 +++ b/engines/lure/webtext.h
 @@ -0,0 +1,28 @@
@@ -347,7 +487,7 @@ index 00000000..67126086
 +// Surface is being destroyed.
 +void forget(Surface *owner);
 +// StringData::getString decoded `text` for `stringId` (Latin-1).
-+void notifyString(uint16 stringId, const char *text);
++void notifyString(int table, uint16 localId, const char *text, const char *hotspotName, const char *characterName);
 +
 +} // namespace WebText
 +} // namespace Lure

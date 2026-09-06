@@ -6,3 +6,4 @@ public/engine
 public/fonts/*.woff2
 .DS_Store
 *.log
+public/games
