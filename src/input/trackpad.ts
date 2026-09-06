@@ -75,15 +75,17 @@ export function attachTrackpad(overlay: HTMLElement, canvas: HTMLCanvasElement, 
     }
   }
   const stopTimer = () => { if (timer) { clearTimeout(timer); timer = null } }
+  // 마우스(하이브리드 기기·데스크톱 ?touch=1)는 오버레이가 삼키지 않고 캔버스로 그대로 전달
+  const forward = (e: PointerEvent) => canvas.dispatchEvent(new PointerEvent(e.type, { clientX: e.clientX, clientY: e.clientY, button: e.button, buttons: e.buttons, pointerId: e.pointerId, pointerType: 'mouse', isPrimary: true, bubbles: true, cancelable: true }))
   overlay.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse') return
+    if (e.pointerType === 'mouse') { forward(e); return }
     e.preventDefault(); overlay.setPointerCapture?.(e.pointerId)
     if (cx === 0 && cy === 0) { const r = rect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2 }
     apply(fsm.down(e.clientX, e.clientY, e.timeStamp))
     stopTimer(); timer = setTimeout(() => apply(fsm.tick(performance.now())), 420)
   })
-  overlay.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') return; e.preventDefault(); apply(fsm.move(e.clientX, e.clientY, e.timeStamp)) })
-  const end = (e: PointerEvent) => { if (e.pointerType === 'mouse') return; e.preventDefault(); stopTimer(); apply(fsm.up(e.timeStamp)) }
+  overlay.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { forward(e); return } e.preventDefault(); apply(fsm.move(e.clientX, e.clientY, e.timeStamp)) })
+  const end = (e: PointerEvent) => { if (e.pointerType === 'mouse') { forward(e); return } e.preventDefault(); stopTimer(); apply(fsm.up(e.timeStamp)) }
   overlay.addEventListener('pointerup', end); overlay.addEventListener('pointercancel', end)
   return { getCursor: () => ({ x: cx, y: cy }) }
 }

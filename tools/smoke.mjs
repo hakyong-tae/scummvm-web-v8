@@ -40,14 +40,18 @@ console.log('canvas box', box)
 await page.mouse.click(gx(160), gy(100)); await sleep(2500)
 await page.keyboard.press('Escape'); await sleep(2500)
 await page.keyboard.press('Escape'); await sleep(4000)
+// 인트로가 이미 끝난 뒤의 Escape는 인게임 종료 확인("Are you sure (y/n)?")을 띄운다 → n으로 닫기
+if ((await page.evaluate(() => (window.__lureText || []).map(r => r.t).join('|'))).includes('Are you sure')) { await page.keyboard.press('n'); await sleep(1500); console.log('dismissed quit confirm') }
 await page.screenshot({ path: outDir + tag + 'room.png' })
 // 첫 방: 감옥 문(88,130)에서 우클릭 홀드 → 동사 팝업(버튼을 누른 동안 표시) → 놓으면 선택된 "Look" 실행 → 설명 대화창
 const dump = () => page.evaluate(() => (window.__lureText || []).map(r => r.t + '@' + r.x + ',' + r.y))
 if (touch) {
   // 트랙패드 모드: 탭 = 클릭(커서 자리), 드래그 = 커서 이동, 롱프레스 = 동사 팝업
   const ts = page.touchscreen
-  await ts.touchStart(gx(160), gy(150)); await ts.touchMove(gx(160) - (gx(160) - gx(88)), gy(150) - (gy(150) - gy(130))); await ts.touchEnd(); await sleep(800)  // 커서를 문으로 드래그
-  await ts.touchStart(gx(200), gy(150)); await sleep(900)                       // 롱프레스 → 우버튼 다운(팝업)
+  // 가상 커서 시작점 = 캔버스 중앙(게임 160,100). 문(88,130)까지의 델타만큼 드래그
+  await ts.touchStart(gx(200), gy(150)); await ts.touchMove(gx(200) + (gx(88) - gx(160)), gy(150) + (gy(130) - gy(100))); await ts.touchEnd(); await sleep(800)
+  const hover = await dump(); console.log('touch hover:', JSON.stringify(hover))
+  await ts.touchStart(gx(200), gy(150)); await sleep(900)                       // 롱프레스(정지) → 우버튼 다운(동사 팝업)
   var menuState = await dump(); console.log('verb popup (touch hold):', JSON.stringify(menuState))
   await page.screenshot({ path: outDir + tag + 'menu.png' })
   await ts.touchEnd(); await sleep(6000)
