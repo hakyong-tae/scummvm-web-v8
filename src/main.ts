@@ -39,6 +39,9 @@ function fitCanvas() {
   canvas.style.height = frame.style.height = `${Math.floor(GAME_H * k)}px`
 }
 addEventListener('resize', fitCanvas); fitCanvas()
+// 홍보 녹화 모드: 제목 오버레이, HUD 숨김
+const promo = params.get('promo') === '1'
+if (promo) { $('promo').classList.add('on') }
 
 // ── 터치(트랙패드) ─────────────────────────────────────────────────────────────
 const coarse = matchMedia('(pointer: coarse)').matches || params.get('touch') === '1'
@@ -104,7 +107,7 @@ startBtn.onclick = async () => {
     canvas, engineBase: assetUrl('engine/'), args: ['lure'],
     callbacks: {
       onStatus: (t) => { statusEl.textContent = t },
-      onReady: () => { startEl.hidden = true; $('hud').hidden = false; canvas.focus(); setTimeout(() => void sync.start(), 3000) },
+      onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); setTimeout(() => void sync.start(), 3000) },
       onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs) },
       onString: (table, local, text, hotspot, char) => { dict?.onString(table, local, text, hotspot, char) },
       onQuit: async () => { $('hud').hidden = true; await showInterstitial(AD_PLACEMENT_QUIT); $('quit').classList.add('on') },

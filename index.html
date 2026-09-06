@@ -24,13 +24,14 @@
   html,body{margin:0;height:100%;background:#000;color:#ddd;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:none}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
   #frame{position:relative}
-  canvas#canvas{display:block;image-rendering:pixelated;background:#000}
+  canvas#canvas{display:block;image-rendering:pixelated;background:#000;outline:none}
   #textlayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
   #textlayer span{position:absolute;white-space:pre;line-height:1;font-family:'NeoDGM',monospace}
   #textlayer .ko{position:absolute;white-space:pre;font-family:'NeoDGM',monospace;text-shadow:0 0 0 currentColor}
   #touchpad{position:absolute;inset:0;touch-action:none;display:none}
   #touchpad.on{display:block}
   #hud{position:fixed;top:6px;right:8px;display:flex;gap:6px;z-index:5}
+  #hud[hidden]{display:none}
   #hud button{background:rgba(0,0,0,.55);color:#ccc;border:1px solid #444;border-radius:6px;font-size:13px;padding:4px 8px;cursor:pointer}
   #cloud{font-size:11px;color:#888;background:rgba(0,0,0,.55);border-radius:6px;padding:5px 8px}
   #cloud.idle{color:#7fc97f}#cloud.error{color:#e07070}#cloud.syncing{color:#e0c060}
@@ -58,6 +59,13 @@
   #quit{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#000;z-index:25}
   #quit.on{display:flex}
   #quit button{font-size:18px;padding:12px 32px;cursor:pointer}
+  /* 홍보 녹화 모드(?promo=1): 정방형 화면 위아래에 제목/문구 */
+  #promo{position:fixed;inset:0;pointer-events:none;display:none;z-index:4;font-family:'NeoDGM',serif;text-align:center}
+  #promo.on{display:block}
+  #promo .pt{position:absolute;left:0;right:0;top:6%;font-size:64px;color:#e8c56a;text-shadow:0 4px 0 #3a2a05,0 0 24px rgba(232,197,106,.35)}
+  #promo .ps{position:absolute;left:0;right:0;top:calc(6% + 78px);font-size:26px;color:#bfa66a;letter-spacing:2px}
+  #promo .pb{position:absolute;left:0;right:0;bottom:7%;font-size:30px;color:#ddd;letter-spacing:1px}
+  #promo .pb b{color:#e8c56a}
 </style>
 </head>
 <body>
@@ -91,6 +99,7 @@
     <div id="status"></div>
   </div>
   <div id="rotate">가로로 돌려 주세요<br><small style="color:#999">이 게임은 가로 화면에 맞춰져 있습니다</small></div>
+  <div id="promo"><div class="pt">Lure of the Temptress</div><div class="ps">유혹의 마녀 · 한글판</div><div class="pb">설치 없이 · <b>한글 자막</b> · 폰에서도 · 클라우드 세이브</div></div>
   <div id="quit"><div>게임을 종료했습니다.</div><button id="restartBtn">다시 시작</button></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
