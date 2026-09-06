@@ -56,7 +56,7 @@
 ## M5 배포 준비
 - Verse8 빌더는 `bun run build`만 → **엔진 산출물을 실파일로 커밋**해야 함. `tools/prepare-deploy.sh` → `deploy/`(16MB: scummvm.js/wasm + data{lure.dat, scummmodern.zip, gui-icons, games/lure} + 셸 + server.js + engine-patches + 문서), V8용 package.json(emscripten 스크립트 제외), lock 파일 없음.
 - 하위경로 검증: `node tools/serve-subpath.mjs` → `http://localhost:3047/g/lure/` → `smoke --lang=ko <url>` OK. 절대경로는 `assetUrl()`로 전부 제거, `base:'./'`, GAME_SIZE 핸드셰이크.
-- 절차·V8 AI 프롬프트: `docs/DEPLOY-VERSE8.md`. 실 push는 GitLab 토큰 필요.
+- 절차·V8 AI 프롬프트: `docs/DEPLOY-VERSE8.md`. **배포 push 완료(2026-09-06)**: `gitlab.verse8.io/hy.tae90/lure-of-the-temptress-kr` develop `5909aac`. 플랫폼 파일(.env/.agent8.lock/committedAt/PROJECT) 보존, 템플릿 .gitignore에 dist/·package-lock 병합.
 
 ## 검증 결과 (2026-09-06)
 - M1: Chrome(가시 탭)에서 rAF 120/s, longtask 0 → Asyncify 성능 문제 없음. 타이틀/인트로/첫 방 정상.
