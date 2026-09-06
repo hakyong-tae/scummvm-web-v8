@@ -1,5 +1,6 @@
 import type { EnDump, KoData } from './dict'
 import { KoDict, normalizeEn } from './dict'
+import { josa } from './josa'
 
 /** 상태줄 "<action> <name>[ <connector> <name2>]" → 액션 템플릿({1},{2})으로 한글 합성 */
 export class StatusComposer {
@@ -22,8 +23,11 @@ export class StatusComposer {
       const i = rest.indexOf(` ${c.en} `)
       if (i > 0) { n1 = rest.slice(0, i); n2 = rest.slice(i + c.en.length + 2); break }
     }
-    if (!n2 && tpl.includes('{2}')) return null
+    const [full, bare] = tpl.split('|')
+    if (!n1 && !n2) return (bare ?? full.replace(/\{[12](?::[^}]+)?\}/g, '')).replace(/\s+/g, ' ').trim()   // 팝업 메뉴의 단독 액션 라벨
+    if (!n2 && full.includes('{2}')) return null
     const k1 = n1 ? this.dict.koName(n1) : '', k2 = n2 ? this.dict.koName(n2) : ''
-    return tpl.replace('{1}', k1).replace('{2}', k2).replace(/\s+/g, ' ').trim()
+    return full.replace(/\{([12])(?::([^}]+))?\}/g, (_m, i: string, p?: string) => { const k = i === '1' ? k1 : k2; return p ? josa(k, p) : k })
+      .replace(/\s+/g, ' ').trim()
   }
 }
