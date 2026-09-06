@@ -2,6 +2,7 @@ export interface ResolveServices {
   lookup: (en: string) => string | null                       // 영문최종(정규화) → 한글
   compose: (en: string) => string | null                      // 상태줄/액션 합성
   prefix: (en: string) => { full: string; ratio: number } | null
+  menuItem?: (en: string) => string | null                  // 다줄 블록의 각 줄(메뉴 항목) 우선 해석
 }
 export type Resolved = { text: string; partial?: number } | { lines: string[] } | null
 
@@ -9,7 +10,7 @@ export type Resolved = { text: string; partial?: number } | { lines: string[] } 
 export function resolveBlock(lines: string[], svc: ResolveServices): Resolved {
   const one = (s: string) => svc.lookup(s) ?? svc.compose(s)
   if (lines.length > 1) {
-    const per = lines.map(one)
+    const per = lines.map(l => svc.menuItem?.(l) ?? one(l))
     if (per.every(p => p !== null)) return { lines: per as string[] }
   }
   const joined = lines.join(' ').replace(/\s+/g, ' ').trim()

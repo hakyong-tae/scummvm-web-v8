@@ -60,6 +60,7 @@ async function loadKorean() {
       lookup: (s) => dict!.lookup(s),
       compose: (s) => statusComposer!.compose(s),
       prefix: (s) => dict!.lookupPrefix(s),
+      menuItem: (s) => statusComposer!.compose(s, true),
     }))
   } catch (e) { console.warn('[i18n] 한글 데이터 로드 실패, 영문으로 진행', e) }
 }
