@@ -37,6 +37,6 @@ out={"name":src["name"],"version":src["version"],"private":True,"type":"module",
 json.dump(out,open(sys.argv[2],'w'),indent=2,ensure_ascii=False); open(sys.argv[2],'a').write('\n')
 PY
 mkdir -p "$OUT/tools" "$OUT/tests"; cp "$ROOT/tools/i18n-check.mjs" "$OUT/tools/"; cp "$ROOT/tests/"*.test.ts "$OUT/tests/"
-printf 'node_modules/\ndist/\n.DS_Store\n*.log\n' > "$OUT/.gitignore"
+printf 'node_modules/\ndist/\npackage-lock.json\n.DS_Store\n*.log\n' > "$OUT/.gitignore"
 echo "deploy/ ready: $(du -sh "$OUT" | cut -f1) (engine $(du -sh "$OUT/public/engine" | cut -f1))"
 find "$OUT" -type l | head -3 | sed 's/^/WARNING symlink: /' || true
