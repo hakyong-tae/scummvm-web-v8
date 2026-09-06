@@ -1,5 +1,7 @@
 import { bootEngine } from './engine/loader'
 import { TextLayer } from './text/layer'
+import { KoDict, type EnDump, type KoData } from './i18n/dict'
+import { StatusComposer } from './i18n/status'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const frame = document.getElementById('frame')!
@@ -39,6 +41,29 @@ function perfProbe() {
 
 const layer = new TextLayer(document.getElementById('textlayer')!, canvas)
 layer.setEnabled(params.get('layer') !== '0')
+const lang = params.get('lang') ?? 'ko'
+let dict: KoDict | null = null
+let statusComposer: StatusComposer | null = null
+
+async function loadKorean() {
+  if (lang !== 'ko') return
+  try {
+    const [en, ko] = await Promise.all([
+      fetch('/games/lure/strings.en.json').then(r => r.json()) as Promise<EnDump>,
+      fetch('/games/lure/ko.json').then(r => r.json()) as Promise<KoData>,
+    ])
+    dict = new KoDict(en, ko)
+    // S_FOR=35, S_TO=36, S_ON=37 (engines/lure/res_struct.h StringEnum)
+    statusComposer = new StatusComposer(dict, en, ko, { for: 35, to: 36, on: 37 })
+    layer.setTranslateBlock((joined) => {
+      const d = dict!
+      const direct = d.lookup(joined) ?? statusComposer!.compose(joined)
+      if (direct) return { text: direct }
+      const p = d.lookupPrefix(joined)
+      return p ? { text: p.full, partial: p.ratio } : null
+    })
+  } catch (e) { console.warn('[i18n] 한글 데이터 로드 실패, 영문으로 진행', e) }
+}
 
 startBtn.disabled = false
 startBtn.textContent = '게임 시작'
@@ -46,6 +71,7 @@ startBtn.onclick = async () => {
   startBtn.disabled = true
   startBtn.textContent = '엔진 로딩 중…'
   perfProbe()
+  await loadKorean()
   await bootEngine({
     canvas,
     engineBase: new URL('engine/', document.baseURI).href,
@@ -54,7 +80,7 @@ startBtn.onclick = async () => {
       onStatus: (t) => { statusEl.textContent = t },
       onReady: () => { startEl.hidden = true; canvas.focus() },
       onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs) },
-      onString: () => {},
+      onString: (table, local, text, hotspot, char) => { dict?.onString(table, local, text, hotspot, char) },
     },
   })
 }
