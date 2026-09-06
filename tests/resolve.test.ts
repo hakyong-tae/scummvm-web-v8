@@ -4,10 +4,14 @@ const svc = {
   lookup: (s: string) => ({ 'Hello there, stranger.': '안녕, 낯선 이.', 'Yes.': '그래.', 'No.': '아니.' } as Record<string, string>)[s] ?? null,
   compose: (s: string) => ({ Close: '닫기', Lock: '잠그기', Open: '열기', 'Look at Cell door': '감옥 문 보기' } as Record<string, string>)[s] ?? null,
   prefix: (s: string) => s === 'Hello there,' ? { full: '안녕, 낯선 이.', ratio: 0.5 } : null,
+  menuItem: (s: string) => s === 'Lock' ? '잠그기' : null,
 }
 describe('resolveBlock', () => {
   it('menu items: every line resolves on its own → per-line', () => {
     expect(resolveBlock(['Close', 'Lock', 'Open'], svc)).toEqual({ lines: ['닫기', '잠그기', '열기'] })
+  })
+  it('menu item wins over name lookup inside multi-line blocks', () => {
+    expect(resolveBlock(['Close', 'Lock', 'Open'], { ...svc, lookup: (s: string) => s === 'Lock' ? '자물쇠' : svc.lookup(s) })).toEqual({ lines: ['닫기', '잠그기', '열기'] })
   })
   it('talk choices: full sentences per line → per-line', () => {
     expect(resolveBlock(['Yes.', 'No.'], svc)).toEqual({ lines: ['그래.', '아니.'] })

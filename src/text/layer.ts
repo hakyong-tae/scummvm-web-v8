@@ -57,7 +57,7 @@ export class TextLayer {
           const key = `${r.x},${r.y},${r.t}`
           live.add(key)
           const box: TextBlock = { ...b, x: r.x, y: r.y, w: r.w, h: r.h, records: [r], joined: r.t }
-          this.placeKo(this.koDiv(key), box, tr.lines[i])
+          this.placeKo(this.koDiv(key), box, tr.lines[i], undefined, 0)
         })
         continue
       }
@@ -81,10 +81,10 @@ export class TextLayer {
     return ctx.measureText(text).width / 10
   }
 
-  private placeKo(div: HTMLDivElement, b: TextBlock, text: string, partial?: number) {
+  private placeKo(div: HTMLDivElement, b: TextBlock, text: string, partial?: number, slackH = 6) {
     const rect = this.canvas.getBoundingClientRect()
     const sx = rect.width / 320, sy = rect.height / 200
-    const lay = layoutKorean(b, text, this.measure)
+    const lay = layoutKorean(b, text, this.measure, slackH)
     let shown = lay.lines.join('\n')
     if (partial !== undefined && partial < 1) shown = shown.slice(0, Math.round(shown.length * partial))
     div.textContent = shown
