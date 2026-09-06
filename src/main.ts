@@ -10,6 +10,13 @@ import { SaveSyncController } from './save/syncController'
 import { openNotice } from './ui/notice'
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
+
+// SDL3(Emscripten)가 클릭 시 requestPointerLock()을 시도하고 iframe/헤드리스에서 거부되면 미처리 rejection을 남긴다.
+// 게임 동작과 무관한 소음이라 이 메시지만 삼킨다(다른 오류는 그대로).
+addEventListener('unhandledrejection', (e) => {
+  const msg = String((e.reason && (e.reason as Error).message) ?? e.reason ?? '')
+  if (/pointer lock/i.test(msg)) e.preventDefault()
+})
 const canvas = $<HTMLCanvasElement>('canvas')
 const frame = $('frame'), startEl = $('start'), startBtn = $<HTMLButtonElement>('startBtn'), statusEl = $('status')
 const params = new URLSearchParams(location.search)
