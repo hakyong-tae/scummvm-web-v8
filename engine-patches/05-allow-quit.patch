@@ -1,0 +1,16 @@
+diff --git a/backends/platform/sdl/emscripten/emscripten.cpp b/backends/platform/sdl/emscripten/emscripten.cpp
+index 03ecd52c..fdd99cdd 100644
+--- a/backends/platform/sdl/emscripten/emscripten.cpp
++++ b/backends/platform/sdl/emscripten/emscripten.cpp
+@@ -131,8 +131,10 @@ void OSystem_Emscripten::init() {
+ bool OSystem_Emscripten::hasFeature(Feature f) {
+ 	if (f == kFeatureFullscreenMode)
+ 		return true;
++	// scummvm-web-v8: allow a real quit so scummvm_main() returns and the page can show its own end screen
++	// (upstream returns to the launcher instead, which this single-game page has no use for)
+ 	if (f == kFeatureNoQuit)
+-		return true;
++		return false;
+ 	return OSystem_POSIX::hasFeature(f);
+ }
+ 

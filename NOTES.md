@@ -44,12 +44,29 @@
 - **번역 규칙**: 서술은 '~다' 체(2인칭 '당신' 최소화), 랫파우치→디어모트 존댓말('나리/주인님'), 스콜은 거친 반말, 울타르는 조사 생략 말투. 용어집 `glossary.json`. 디버그 문자열(ROOMxx/MEGAxx/NULL)은 검수에서 제외.
 - **미번역 영역**: 상단 메뉴바(비트맵), 인트로/엔딩 자막(프레임 합성). 저장 슬롯 이름은 사용자 입력.
 
+## M4 V8 통합
+- **제목** `Lure of the Temptress (한글판)`(`src/config.ts` GAME_TITLE), 부제 "유혹의 마녀". 스토어 문안 `docs/STORE.md`.
+- **터치**: `pointer: coarse`(또는 `?touch=1`)면 캔버스 위 `#touchpad` 오버레이가 터치 포인터를 받아 **합성 PointerEvent(pointerType 'mouse')** 를 캔버스에 디스패치. SDL3 Emscripten은 pointer 이벤트만 듣고 MouseEvent 합성은 무시(실측). 트랙패드 모드: 드래그=커서 이동(1:1), 탭=좌클릭, 롱프레스 400ms=우버튼 다운(동사 팝업, Lure 원작이 '누른 동안 표시'라 정확히 대응), 놓기=우버튼 업. 직접탭 모드 옵션. 마우스 포인터는 오버레이가 캔버스로 전달(하이브리드 기기).
+- **클라우드 세이브**: `server.js`(agent8, 컬렉션 `lure_saves`, 계정·슬롯별 base64) ↔ `src/save/*`. 전역 `FS`(비-MODULARIZE 빌드라 window.FS)로 `/home/web_user/saves` 스냅샷을 5초 폴링, 변경 시 업로드. 부팅 3초 후 diff: 클라우드 전용→다운로드, 로컬 최신→업로드, 둘 다 있고 클라우드 최신→confirm. 플랫폼 밖(`VITE_AGENT8_VERSE` 없음)이면 "저장: 로컬". 접속은 스토어 경유(`@agent8/gameserver/dist/src/store/useGameServerStore` 리터럴 딥임포트). SDK가 react 18 peer 요구 → 설치 필요.
+- **광고**: `@verse8/ads` 정적 import, 인터스티셜 시작(`lure-start`)·종료(`lure-quit`) 각 1회. 호스트 밖은 1.5초 mock.
+- **종료**: 패치 04(`emscripten-main.cpp` `main()` 끝 `Module.onLureQuit`) + 패치 05(`kFeatureNoQuit`→false; 업스트림은 웹에서 종료 대신 런처로 복귀) → 광고 → "다시 시작" 화면.
+- **고지**: `src/ui/notice.ts` — 원본 LICENSE/README 전문(배포본 `engine/data/games/lure/`에서 fetch), 비공식 자막·무개조·GPLv3·OFL.
+- **캔버스 맞춤**: 정수배→contain 소수 배율(폰 가로에서 정수배는 화면 절반). 세로 화면(coarse)이면 회전 안내.
+
+## M5 배포 준비
+- Verse8 빌더는 `bun run build`만 → **엔진 산출물을 실파일로 커밋**해야 함. `tools/prepare-deploy.sh` → `deploy/`(16MB: scummvm.js/wasm + data{lure.dat, scummmodern.zip, gui-icons, games/lure} + 셸 + server.js + engine-patches + 문서), V8용 package.json(emscripten 스크립트 제외), lock 파일 없음.
+- 하위경로 검증: `node tools/serve-subpath.mjs` → `http://localhost:3047/g/lure/` → `smoke --lang=ko <url>` OK. 절대경로는 `assetUrl()`로 전부 제거, `base:'./'`, GAME_SIZE 핸드셰이크.
+- 절차·V8 AI 프롬프트: `docs/DEPLOY-VERSE8.md`. 실 push는 GitLab 토큰 필요.
+
 ## 검증 결과 (2026-09-06)
 - M1: Chrome(가시 탭)에서 rAF 120/s, longtask 0 → Asyncify 성능 문제 없음. 타이틀/인트로/첫 방 정상.
 - M2: 상태줄·동사 팝업·2줄 설명 대화창이 DOM span으로 좌표 일치 렌더(`shots/m2-*.png`). 콜백 예외 0.
+- M4: `smoke --lang=ko --touch` OK(터치 에뮬레이션: 드래그 호버→롱프레스 팝업 한글 라벨→선택→대화창). M5: deploy/dist를 `/g/lure/`로 서빙해 `smoke --lang=ko` OK, 번들에 `"@agent8/gameserver"` bare specifier 0건.
 - M3: `smoke --lang=ko` OK — 상태줄 "감옥 문을 잠그기", 팝업 "닫기/잠그기/열기", 2줄 설명창이 10px 한글로 말풍선 안에 재줄바꿈(`shots/m3-ko-*.png`). `i18n-check` 오류 0.
 
 ## 알려진 함정
+- Vite dev 서버 기동 후 새 의존성을 설치하면 `504 Outdated Optimize Dep`로 모듈 로드가 통째로 실패(시작 버튼이 안 켜짐) → `rm -rf node_modules/.vite` 후 서버 재시작.
+- 스모크의 인트로 스킵 Escape가 인트로 종료 후 도달하면 인게임 종료 확인("Are you sure (y/n)?")이 뜬다 → 스모크가 `n`으로 닫음.
 - **브라우저 탭이 hidden이면 엔진이 1틱/초로 스로틀**(Asyncify sleep = setTimeout). 프리뷰 패널이 접혀 있거나 Chrome 창이 가려지면 멈춘 듯 보임.
   검증은 `tools/smoke.mjs`(헤드리스, `--disable-background-timer-throttling`)로.
 - build.sh는 시작 시 `git checkout -- . && git clean -fd engines backends dists`로 소스를 리셋 → 패치는 **먼저 .patch로 뽑고** 빌드.
