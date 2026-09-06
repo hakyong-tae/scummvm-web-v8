@@ -3,6 +3,7 @@ import { TextLayer } from './text/layer'
 import { KoDict, type EnDump, type KoData } from './i18n/dict'
 import { StatusComposer } from './i18n/status'
 import { resolveBlock } from './i18n/resolve'
+import { assetUrl } from './config'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const frame = document.getElementById('frame')!
@@ -50,8 +51,8 @@ async function loadKorean() {
   if (lang !== 'ko') return
   try {
     const [en, ko] = await Promise.all([
-      fetch('/games/lure/strings.en.json').then(r => r.json()) as Promise<EnDump>,
-      fetch('/games/lure/ko.json').then(r => r.json()) as Promise<KoData>,
+      fetch(assetUrl('games/lure/strings.en.json')).then(r => r.json()) as Promise<EnDump>,
+      fetch(assetUrl('games/lure/ko.json')).then(r => r.json()) as Promise<KoData>,
     ])
     dict = new KoDict(en, ko)
     // S_FOR=35, S_TO=36, S_ON=37 (engines/lure/res_struct.h StringEnum)

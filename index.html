@@ -2,10 +2,25 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Lure of the Temptress</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<!-- Verse8 호스팅 규약: 플랫폼이 iframe 크기를 이 핸드셰이크로 정한다. 없으면 기본 크기로 잘림. -->
+<script>
+(function () {
+  function reportGameSize() {
+    try {
+      window.parent.postMessage({ type: 'GAME_SIZE_RESPONSE',
+        height: Math.max(document.body ? document.body.scrollHeight : 0, document.documentElement.scrollHeight),
+        width: Math.max(document.body ? document.body.scrollWidth : 0, document.documentElement.scrollWidth) }, '*')
+    } catch (e) {}
+  }
+  window.addEventListener('load', reportGameSize)
+  window.addEventListener('resize', reportGameSize)
+  window.addEventListener('message', function (ev) { if (ev.data && ev.data.type === 'REQUEST_GAME_SIZE') reportGameSize() })
+})()
+</script>
+<title>Lure of the Temptress (한글판)</title>
 <style>
-  @font-face{font-family:'NeoDGM';src:url('/fonts/neodgm.woff2') format('woff2');font-display:block}
+  @font-face{font-family:'NeoDGM';src:url('fonts/neodgm.woff2') format('woff2');font-display:block}
   html,body{margin:0;height:100%;background:#000;color:#ddd;font-family:system-ui,sans-serif;overflow:hidden}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
   #frame{position:relative}
