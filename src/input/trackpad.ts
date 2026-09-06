@@ -52,24 +52,25 @@ export class TrackpadFSM {
   }
 }
 
-/** 오버레이의 포인터 이벤트를 받아 캔버스에 합성 MouseEvent를 디스패치. SDL3 Emscripten은 isTrusted를 보지 않는다. */
+/** 오버레이의 터치 포인터 이벤트를 받아 캔버스에 합성 PointerEvent(pointerType 'mouse')를 디스패치. SDL3 Emscripten은 isTrusted를 보지 않는다. */
 export function attachTrackpad(overlay: HTMLElement, canvas: HTMLCanvasElement, fsm: TrackpadFSM) {
   let cx = 0, cy = 0            // 가상 커서(CSS px, viewport 기준)
   let buttons = 0
   let timer: ReturnType<typeof setTimeout> | null = null
   const rect = () => canvas.getBoundingClientRect()
   const clamp = () => { const r = rect(); cx = Math.min(Math.max(cx, r.left), r.right - 1); cy = Math.min(Math.max(cy, r.top), r.bottom - 1) }
-  const fire = (type: string, button = 0) => {
-    canvas.dispatchEvent(new MouseEvent(type, { clientX: cx, clientY: cy, button, buttons, bubbles: true, cancelable: true }))
+  // SDL3 Emscripten은 PointerEvent(pointermove/down/up)를 듣는다. MouseEvent 합성은 무시됨(실측).
+  const fire = (type: 'pointermove' | 'pointerdown' | 'pointerup', button = 0) => {
+    canvas.dispatchEvent(new PointerEvent(type, { clientX: cx, clientY: cy, button, buttons, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true, cancelable: true }))
   }
   const apply = (actions: TrackpadAction[]) => {
     for (const a of actions) {
       switch (a.type) {
-        case 'warp': cx = a.x; cy = a.y; clamp(); fire('mousemove'); break
-        case 'move': cx += a.dx; cy += a.dy; clamp(); fire('mousemove'); break
-        case 'click': buttons = 1; fire('mousedown', 0); buttons = 0; fire('mouseup', 0); break
-        case 'rdown': buttons = 2; fire('mousedown', 2); break
-        case 'rup': buttons = 0; fire('mouseup', 2); break
+        case 'warp': cx = a.x; cy = a.y; clamp(); fire('pointermove'); break
+        case 'move': cx += a.dx; cy += a.dy; clamp(); fire('pointermove'); break
+        case 'click': buttons = 1; fire('pointerdown', 0); buttons = 0; fire('pointerup', 0); break
+        case 'rdown': buttons = 2; fire('pointerdown', 2); break
+        case 'rup': buttons = 0; fire('pointerup', 2); break
       }
     }
   }

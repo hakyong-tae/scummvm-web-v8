@@ -21,17 +21,43 @@
 <title>Lure of the Temptress (한글판)</title>
 <style>
   @font-face{font-family:'NeoDGM';src:url('fonts/neodgm.woff2') format('woff2');font-display:block}
-  html,body{margin:0;height:100%;background:#000;color:#ddd;font-family:system-ui,sans-serif;overflow:hidden}
+  html,body{margin:0;height:100%;background:#000;color:#ddd;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:none}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
   #frame{position:relative}
   canvas#canvas{display:block;image-rendering:pixelated;background:#000}
   #textlayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
   #textlayer span{position:absolute;white-space:pre;line-height:1;font-family:'NeoDGM',monospace}
   #textlayer .ko{position:absolute;white-space:pre;font-family:'NeoDGM',monospace;text-shadow:0 0 0 currentColor}
-  #start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000}
+  #touchpad{position:absolute;inset:0;touch-action:none;display:none}
+  #touchpad.on{display:block}
+  #hud{position:fixed;top:6px;right:8px;display:flex;gap:6px;z-index:5}
+  #hud button{background:rgba(0,0,0,.55);color:#ccc;border:1px solid #444;border-radius:6px;font-size:13px;padding:4px 8px;cursor:pointer}
+  #cloud{font-size:11px;color:#888;background:rgba(0,0,0,.55);border-radius:6px;padding:5px 8px}
+  #cloud.idle{color:#7fc97f}#cloud.error{color:#e07070}#cloud.syncing{color:#e0c060}
+  #start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(ellipse at center,#1a1208 0%,#000 70%);z-index:10}
   #start[hidden]{display:none}
-  #start button{font-size:20px;padding:14px 40px;cursor:pointer}
-  #status{font-size:12px;color:#888;min-height:1.2em}
+  #start h1{font-family:'NeoDGM',serif;font-size:clamp(22px,5vw,40px);margin:0;color:#e8c56a;text-shadow:0 2px 0 #3a2a05}
+  #start .sub{color:#a89468;font-size:13px;letter-spacing:1px;margin-top:-6px}
+  #start .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  #start button{font-size:17px;padding:12px 28px;cursor:pointer;background:#2b2010;color:#f1dfa8;border:1px solid #6b5426;border-radius:8px}
+  #start button.primary{font-size:20px;padding:14px 44px;background:#5a3f12;border-color:#c99b3a}
+  #start button:disabled{opacity:.5;cursor:default}
+  #status{font-size:12px;color:#777;min-height:1.2em}
+  #rotate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:20;font-size:18px;text-align:center;padding:24px}
+  @media (orientation:portrait) and (pointer:coarse){#rotate.armed{display:flex}}
+  #settings{position:fixed;top:44px;right:8px;background:rgba(10,10,10,.95);border:1px solid #444;border-radius:8px;padding:10px 12px;z-index:6;font-size:13px;display:none;min-width:200px}
+  #settings.on{display:block}
+  #settings label{display:flex;justify-content:space-between;gap:12px;padding:6px 0}
+  #settings select,#settings button{font-size:13px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
+  .modal-box{background:#151210;border:1px solid #6b5426;border-radius:10px;max-width:640px;max-height:90vh;overflow:auto;padding:18px 20px;font-size:14px;line-height:1.55}
+  .modal-box h2{margin:0 0 10px;color:#e8c56a;font-size:18px}
+  .modal-box pre{white-space:pre-wrap;font-size:11px;color:#aaa;background:#0b0a09;padding:10px;border-radius:6px}
+  .modal-box a{color:#e8c56a}
+  .modal-box .close{margin-top:10px;padding:8px 18px;cursor:pointer}
+  #quit{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#000;z-index:25}
+  #quit.on{display:flex}
+  #quit button{font-size:18px;padding:12px 32px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -39,12 +65,33 @@
     <div id="frame">
       <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
       <div id="textlayer"></div>
+      <div id="touchpad"></div>
     </div>
   </div>
+  <div id="hud" hidden>
+    <span id="cloud" class="offline">저장: 로컬</span>
+    <button id="btnSettings" title="설정">⚙</button>
+    <button id="btnInfo" title="정보/라이선스">ⓘ</button>
+  </div>
+  <div id="settings">
+    <label>터치 조작 <select id="selTouch"><option value="trackpad">트랙패드(드래그로 커서)</option><option value="direct">직접 탭</option></select></label>
+    <label>자막 <select id="selLang"><option value="ko">한국어</option><option value="en">English</option></select></label>
+    <div style="color:#888;font-size:11px;margin-top:6px">길게 누르면 동작 메뉴 · 드래그해서 고르고 손을 떼면 실행</div>
+  </div>
   <div id="start">
-    <button id="startBtn" disabled>불러오는 중…</button>
+    <h1 id="title">Lure of the Temptress</h1>
+    <div class="sub" id="subtitle">유혹의 마녀 · 1992 Revolution Software · 비공식 한글판</div>
+    <div class="row">
+      <button id="startBtn" class="primary" disabled>불러오는 중…</button>
+    </div>
+    <div class="row">
+      <button id="langBtn">자막: 한국어</button>
+      <button id="infoBtn">정보 / 라이선스</button>
+    </div>
     <div id="status"></div>
   </div>
+  <div id="rotate">가로로 돌려 주세요<br><small style="color:#999">이 게임은 가로 화면에 맞춰져 있습니다</small></div>
+  <div id="quit"><div>게임을 종료했습니다.</div><button id="restartBtn">다시 시작</button></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

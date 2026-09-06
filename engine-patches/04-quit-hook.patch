@@ -1,0 +1,28 @@
+diff --git a/backends/platform/sdl/emscripten/emscripten-main.cpp b/backends/platform/sdl/emscripten/emscripten-main.cpp
+index 8727d364..c6451dc5 100644
+--- a/backends/platform/sdl/emscripten/emscripten-main.cpp
++++ b/backends/platform/sdl/emscripten/emscripten-main.cpp
+@@ -19,9 +19,13 @@
+  *
+  */
+ 
++// scummvm-web-v8: emscripten.h declares FILE, which common/forbidden.h poisons (same exception as emscripten.cpp)
++#define FORBIDDEN_SYMBOL_EXCEPTION_FILE
++
+ #include "common/scummsys.h"
+ 
+ #if defined(__EMSCRIPTEN__) 
++#include <emscripten.h>
+ #include "backends/platform/sdl/emscripten/emscripten.h"
+ #include "backends/plugins/sdl/sdl-provider.h"
+ #include "base/main.h"
+@@ -42,6 +46,9 @@ int main(int argc, char *argv[]) {
+ 	// Invoke the actual ScummVM main entry point:
+ 	int res = scummvm_main(argc, argv);
+ 
++	// scummvm-web-v8: tell the page the game quit (EXIT_RUNTIME=0 build never calls Module.onExit)
++	EM_ASM({ if (Module['onLureQuit']) Module['onLureQuit']($0); }, res);
++
+ 	// Free OSystem
+ 	g_system->destroy();
+ 
