@@ -1,6 +1,6 @@
 node_modules/
 dist/
-engine/
+/engine/
 games/*/data/
 public/engine
 public/fonts/*.woff2
