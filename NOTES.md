@@ -47,16 +47,21 @@
 ## M4 V8 통합
 - **제목** `Lure of the Temptress (한글판)`(`src/config.ts` GAME_TITLE), 부제 "유혹의 마녀". 스토어 문안 `docs/STORE.md`.
 - **터치**: `pointer: coarse`(또는 `?touch=1`)면 캔버스 위 `#touchpad` 오버레이가 터치 포인터를 받아 **합성 PointerEvent(pointerType 'mouse')** 를 캔버스에 디스패치. SDL3 Emscripten은 pointer 이벤트만 듣고 MouseEvent 합성은 무시(실측). 트랙패드 모드: 드래그=커서 이동(1:1), 탭=좌클릭, 롱프레스 400ms=우버튼 다운(동사 팝업, Lure 원작이 '누른 동안 표시'라 정확히 대응), 놓기=우버튼 업. 직접탭 모드 옵션. 마우스 포인터는 오버레이가 캔버스로 전달(하이브리드 기기).
-- **클라우드 세이브**: `server.js`(agent8, 컬렉션 `lure_saves`, 계정·슬롯별 base64) ↔ `src/save/*`. 전역 `FS`(비-MODULARIZE 빌드라 window.FS)로 `/home/web_user/saves` 스냅샷을 5초 폴링, 변경 시 업로드. 부팅 3초 후 diff: 클라우드 전용→다운로드, 로컬 최신→업로드, 둘 다 있고 클라우드 최신→confirm. 플랫폼 밖(`VITE_AGENT8_VERSE` 없음)이면 "저장: 로컬". 접속은 스토어 경유(`@agent8/gameserver/dist/src/store/useGameServerStore` 리터럴 딥임포트). SDK가 react 18 peer 요구 → 설치 필요.
+- **클라우드 세이브**: `server/src/server.ts`(agent8, 컬렉션 `lure_saves`, 계정·슬롯별 base64) ↔ `src/save/*`. 전역 `FS`(비-MODULARIZE 빌드라 window.FS)로 `/home/web_user/saves` 스냅샷을 5초 폴링, 변경 시 업로드. 부팅 3초 후 diff: 클라우드 전용→다운로드, 로컬 최신→업로드, 둘 다 있고 클라우드 최신→confirm. 플랫폼 밖(`VITE_AGENT8_VERSE` 없음)이면 "저장: 로컬". 접속은 스토어 경유(`@agent8/gameserver/dist/src/store/useGameServerStore` 리터럴 딥임포트). SDK가 react 18 peer 요구 → 설치 필요.
 - **광고**: `@verse8/ads` 정적 import, 인터스티셜 시작(`lure-start`)·종료(`lure-quit`) 각 1회. 호스트 밖은 1.5초 mock.
 - **종료**: 패치 04(`emscripten-main.cpp` `main()` 끝 `Module.onLureQuit`) + 패치 05(`kFeatureNoQuit`→false; 업스트림은 웹에서 종료 대신 런처로 복귀) → 광고 → "다시 시작" 화면.
 - **고지**: `src/ui/notice.ts` — 원본 LICENSE/README 전문(배포본 `engine/data/games/lure/`에서 fetch), 비공식 자막·무개조·GPLv3·OFL.
 - **캔버스 맞춤**: 정수배→contain 소수 배율(폰 가로에서 정수배는 화면 절반). 세로 화면(coarse)이면 회전 안내.
 
 ## M5 배포 준비
-- Verse8 빌더는 `bun run build`만 → **엔진 산출물을 실파일로 커밋**해야 함. `tools/prepare-deploy.sh` → `deploy/`(16MB: scummvm.js/wasm + data{lure.dat, scummmodern.zip, gui-icons, games/lure} + 셸 + server.js + engine-patches + 문서), V8용 package.json(emscripten 스크립트 제외), lock 파일 없음.
+- Verse8 빌더는 `bun run build`만 → **엔진 산출물을 실파일로 커밋**해야 함. `tools/prepare-deploy.sh` → `deploy/`(16MB: scummvm.js/wasm + data{lure.dat, scummmodern.zip, gui-icons, games/lure} + 셸 + server/ + engine-patches + 문서), V8용 package.json(emscripten 스크립트 제외), lock 파일 없음.
 - 하위경로 검증: `node tools/serve-subpath.mjs` → `http://localhost:3047/g/lure/` → `smoke --lang=ko <url>` OK. 절대경로는 `assetUrl()`로 전부 제거, `base:'./'`, GAME_SIZE 핸드셰이크.
 - 절차·V8 AI 프롬프트: `docs/DEPLOY-VERSE8.md`. **배포 push 완료(2026-09-06)**: `gitlab.verse8.io/hy.tae90/lure-of-the-temptress-kr` develop `5909aac`. 플랫폼 파일(.env/.agent8.lock/committedAt/PROJECT) 보존, 템플릿 .gitignore에 dist/·package-lock 병합.
+
+## 원스토어(ONE store) 요건 대응 (2026-09-07)
+- 폼 `[Verse8] Application Form for ONE Store` 요건 ↔ 구현: 광고 필수(전면 시작/종료 + **Opt-in 힌트 광고** `💡`), **모든 SDK 호출 `timeoutMs: 120_000`**(생략=30초=반려), 계정 서버 저장(agent8 `server/src/server.ts` — 검수기가 `server/src/*.ts`만 인정해 루트 server.js에서 이동), 한/영(게임 자막 + **셸 UI 전부** `src/i18n/ui.ts` data-ui), viewport, 가로 전용, 터치만으로 완주(Esc·⌨ 입력·y/n 버튼 보조), 설명 KO→EN(`docs/STORE-SHORT.md`), 확률형 없음.
+- 답안: `docs/ONESTORE-FORM.md`. 검수기(`hakyong-tae/anything` v8-checker `check.py`)를 `deploy/`에 로컬 적용해 **통과(FAIL 0)** 확인 — 검수기는 `showInterstitial(`/`showRewarded(` 호출부를 전부 SDK 호출로 보므로 래퍼 이름은 `playInterstitialAd/playRewardedAd`.
+- 힌트 콘텐츠 `games/lure/hints.json`(ko/en 8구간)은 우리가 쓴 공략 노트 — 원작 데이터 아님, 라이선스 3조와 무관. 합성 KeyboardEvent는 canvas dispatch로 SDL3에 전달됨(실측).
 
 ## 검증 결과 (2026-09-06)
 - M1: Chrome(가시 탭)에서 rAF 120/s, longtask 0 → Asyncify 성능 문제 없음. 타이틀/인트로/첫 방 정상.

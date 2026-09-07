@@ -1,6 +1,6 @@
-// Agent8 GameServer functions — Verse8 platform convention: root server.js, a bare
-// `class Server` (not exported) whose methods become remoteFunction endpoints, with
-// $global / $sender injected. Plain JS, no build step. Runs in an isolated VM.
+// Agent8 GameServer functions — server/src/server.ts (Verse8 TS entry convention; `export class` allowed,
+// the V8 build handles it). Methods become remoteFunction endpoints with $global / $sender injected.
+// Runs in an isolated VM: no timers, network or fs. Plain-JS compatible TS.
 //
 // Cloud saves for Lure of the Temptress: one collection item per (account, slot).
 // `slot` is the ScummVM save filename (e.g. "lure.001"), `data` is the file as base64.
@@ -9,7 +9,7 @@
 const SAVES = "lure_saves";
 const MAX_BYTES = 512 * 1024;
 
-class Server {
+export class Server {
   async ping() {
     return "pong";
   }

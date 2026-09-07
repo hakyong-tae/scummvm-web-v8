@@ -5,9 +5,12 @@ import { StatusComposer } from './i18n/status'
 import { resolveBlock } from './i18n/resolve'
 import { assetUrl, GAME_TITLE, AD_PLACEMENT_START, AD_PLACEMENT_QUIT } from './config'
 import { TrackpadFSM, attachTrackpad } from './input/trackpad'
-import { showInterstitial } from './verse8/ads'
+import { playInterstitialAd } from './verse8/ads'
 import { SaveSyncController } from './save/syncController'
 import { openNotice } from './ui/notice'
+import { openHints } from './ui/hints'
+import { pressKey, typeText } from './input/keys'
+import { ui } from './i18n/ui'
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
@@ -23,8 +26,9 @@ const params = new URLSearchParams(location.search)
 const GAME_W = 320, GAME_H = 200
 
 // ── 설정(로컬 저장) ──────────────────────────────────────────────────────────
+if (params.get('lang')) localStorage.setItem('lure.lang', params.get('lang')!)   // URL은 초기값만; 이후 토글이 우선
 const prefs = {
-  get lang() { return params.get('lang') ?? localStorage.getItem('lure.lang') ?? 'ko' },
+  get lang() { return localStorage.getItem('lure.lang') ?? 'ko' },
   set lang(v: string) { localStorage.setItem('lure.lang', v) },
   get touch() { return (localStorage.getItem('lure.touch') as 'trackpad' | 'direct') ?? 'trackpad' },
   set touch(v: 'trackpad' | 'direct') { localStorage.setItem('lure.touch', v) },
@@ -46,7 +50,24 @@ if (promo) { $('promo').classList.add('on') }
 // ── 터치(트랙패드) ─────────────────────────────────────────────────────────────
 const coarse = matchMedia('(pointer: coarse)').matches || params.get('touch') === '1'
 const fsm = new TrackpadFSM({ mode: prefs.touch })
-if (coarse) { $('touchpad').classList.add('on'); attachTrackpad($('touchpad'), canvas, fsm); $('rotate').classList.add('armed') }
+if (coarse) { document.body.classList.add('touch'); $('touchpad').classList.add('on'); attachTrackpad($('touchpad'), canvas, fsm); $('rotate').classList.add('armed') }
+// 키보드 전용 입력의 터치 대체: Esc(인트로 스킵/종료), y/n 확인창 버튼, 텍스트 입력(세이브 이름)
+$('btnEsc').onclick = () => pressKey(canvas, 'Escape')
+$('ynYes').onclick = () => { pressKey(canvas, 'y'); $('yn').hidden = true }
+$('ynNo').onclick = () => { pressKey(canvas, 'n'); $('yn').hidden = true }
+const kbdInput = $<HTMLInputElement>('kbdInput')
+$('btnKbd').onclick = () => { $('kbd').hidden = false; kbdInput.value = ''; kbdInput.focus() }
+$('kbdClose').onclick = () => { $('kbd').hidden = true; canvas.focus() }
+$('kbdSend').onclick = async () => { await typeText(canvas, kbdInput.value); kbdInput.value = '' }
+$('kbdEnter').onclick = () => pressKey(canvas, 'Enter')
+$('kbdBack').onclick = () => pressKey(canvas, 'Backspace')
+kbdInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); void typeText(canvas, kbdInput.value).then(() => { kbdInput.value = ''; pressKey(canvas, 'Enter') }) } })
+/** 엔진 텍스트에서 y/n 확인창을 감지해 터치 버튼 표시(터치 기기만) */
+function watchConfirm(recs: { t: string }[]) {
+  if (!coarse) return
+  const on = recs.some(r => /\(y\/n\)/i.test(r.t))
+  $('yn').hidden = !on
+}
 
 // ── 텍스트 레이어 + 한글 ─────────────────────────────────────────────────────
 const layer = new TextLayer($('textlayer'), canvas)
@@ -71,20 +92,36 @@ async function loadKorean() {
 
 // ── 타이틀 화면 UI ───────────────────────────────────────────────────────────
 const langBtn = $<HTMLButtonElement>('langBtn'), selLang = $<HTMLSelectElement>('selLang'), selTouch = $<HTMLSelectElement>('selTouch')
-const syncLangUi = () => { langBtn.textContent = prefs.lang === 'ko' ? '자막: 한국어' : 'Subtitles: English'; selLang.value = prefs.lang }
+/** 셸 UI 전체를 현재 언어로 다시 채움(data-ui / data-ui-title) */
+function applyUiLang() {
+  const s = ui(prefs.lang) as unknown as Record<string, string>
+  document.documentElement.lang = prefs.lang
+  document.querySelectorAll<HTMLElement>('[data-ui]').forEach(el => { const v = s[el.dataset.ui!]; if (typeof v === 'string') el.textContent = v })
+  document.querySelectorAll<HTMLElement>('[data-ui-title]').forEach(el => { const v = s[el.dataset.uiTitle!]; if (typeof v === 'string') el.title = v })
+  selLang.value = prefs.lang
+  if (!startBtn.disabled) startBtn.textContent = s.start
+  updateCloudBadge()
+}
+const syncLangUi = () => applyUiLang()
 langBtn.onclick = () => { prefs.lang = prefs.lang === 'ko' ? 'en' : 'ko'; syncLangUi() }
 selLang.onchange = () => { prefs.lang = selLang.value; syncLangUi(); void loadKorean() }
 selTouch.value = prefs.touch; selTouch.onchange = () => { prefs.touch = selTouch.value as 'trackpad' | 'direct'; fsm.setMode(prefs.touch) }
-$('infoBtn').onclick = () => void openNotice(); $('btnInfo').onclick = () => void openNotice()
+$('infoBtn').onclick = () => void openNotice(prefs.lang); $('btnInfo').onclick = () => void openNotice(prefs.lang)
+$('btnHints').onclick = () => void openHints(prefs.lang)
 $('btnSettings').onclick = () => $('settings').classList.toggle('on')
-syncLangUi()
 
 // ── 클라우드 세이브 배지 ──────────────────────────────────────────────────────
 const cloudEl = $('cloud')
+let cloudState: 'offline' | 'idle' | 'syncing' | 'error' = 'offline'
+function updateCloudBadge() {
+  const s = ui(prefs.lang); cloudEl.className = cloudState
+  cloudEl.textContent = { offline: s.cloudLocal, idle: s.cloudIdle, syncing: s.cloudSyncing, error: s.cloudError }[cloudState]
+}
 const sync = new SaveSyncController({
-  setStatus: (s, detail) => { cloudEl.className = s; cloudEl.textContent = `저장: ${{ offline: '로컬', idle: '클라우드', syncing: '동기화 중', error: '오류' }[s]}`; if (detail) cloudEl.title = detail },
-  confirmRestore: async (slots) => confirm(`다른 기기의 세이브가 더 최신입니다.\n(${slots.join(', ')})\n클라우드 세이브를 불러올까요? 취소하면 이 기기의 세이브를 유지하고 업로드합니다.`),
+  setStatus: (st, detail) => { cloudState = st; updateCloudBadge(); if (detail) cloudEl.title = detail },
+  confirmRestore: async (slots) => confirm(ui(prefs.lang).confirmRestore(slots.join(', '))),
 })
+applyUiLang()   // cloudEl 정의 이후에 최초 적용(TDZ)
 
 function perfProbe() {
   if (!params.has('perf')) return
@@ -96,21 +133,21 @@ function perfProbe() {
 }
 
 // ── 시작 → 광고 → 부팅 ───────────────────────────────────────────────────────
-startBtn.disabled = false; startBtn.textContent = '게임 시작'
+startBtn.disabled = false; startBtn.textContent = ui(prefs.lang).start
 startBtn.onclick = async () => {
-  startBtn.disabled = true; startBtn.textContent = '준비 중…'
+  startBtn.disabled = true; startBtn.textContent = ui(prefs.lang).preparing
   perfProbe()
-  await showInterstitial(AD_PLACEMENT_START)
+  await playInterstitialAd(AD_PLACEMENT_START)
   await loadKorean()
-  startBtn.textContent = '엔진 로딩 중…'
+  startBtn.textContent = ui(prefs.lang).loadingEngine
   await bootEngine({
     canvas, engineBase: assetUrl('engine/'), args: ['lure'],
     callbacks: {
       onStatus: (t) => { statusEl.textContent = t },
       onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); setTimeout(() => void sync.start(), 3000) },
-      onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs) },
+      onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs); watchConfirm(recs) },
       onString: (table, local, text, hotspot, char) => { dict?.onString(table, local, text, hotspot, char) },
-      onQuit: async () => { $('hud').hidden = true; await showInterstitial(AD_PLACEMENT_QUIT); $('quit').classList.add('on') },
+      onQuit: async () => { $('hud').hidden = true; await playInterstitialAd(AD_PLACEMENT_QUIT); $('quit').classList.add('on') },
     },
   })
 }

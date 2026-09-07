@@ -1,0 +1,22 @@
+{
+ "ko": [
+  {"t": "감옥 (시작)", "h": ["헐거운 벽돌을 살펴보고 밀어 보세요. 벽 너머로 옆방이 보입니다.", "횃불은 손에 들 수 있고, 짚더미는 불에 잘 붙습니다. 경비의 주의를 끄는 데 쓰세요.", "경비가 비운 사이 문을 통해 나가고, 밖에서 빗장을 걸어 가둘 수 있습니다."]},
+  {"t": "감옥 (고문실·경비실)", "h": ["고문대에 묶인 랫파우치는 날카로운 것으로 끈을 끊어야 풀립니다.", "경비실의 병에 통의 술을 채우면 죄수에게 줄 수 있습니다. 죄수는 마지막 말을 남깁니다.", "자루는 칼로 열립니다. 안에서 쓸 만한 것이 나옵니다.", "랫파우치는 '지시하기'로 대신 일을 시킬 수 있습니다. 당신이 못 닿는 곳을 맡겨 보세요."]},
+  {"t": "턴베일 마을 (1)", "h": ["먼저 대장장이 루던을 찾으세요. 대장간은 대장간 거리에 있고, 없으면 술집(맥파이·세버드 암스)을 확인하세요.", "울프가 남긴 말('그 아이가 위험하다')은 약재상 고윈을 뜻합니다.", "마을 사람들은 각자 돌아다닙니다. 없으면 잠시 기다리거나 다른 방을 둘러보세요."]},
+  {"t": "턴베일 마을 (2)", "h": ["그럽(거지)은 시적으로 말하지만 결국 도구를 줍니다. 술 한 잔을 사 주는 것이 대화의 열쇠가 될 수 있습니다.", "타이그의 집은 장터에 있고 잠겨 있습니다. 자물쇠 따개를 가진 사람은 정해져 있습니다.", "모르쿠스에게 물건을 맡기기 전에 두 번 생각하세요. 잃은 것은 돌려받기 어렵습니다."]},
+  {"t": "변신의 약", "h": ["타이그의 일기에 재료와 순서가 적혀 있습니다. 기름 버너 → 가열 → 꼭지 순서입니다.", "셀레나의 것이 필요합니다. 마을에서 셀레나 본인이 남기고 간 흔적을 찾아보세요.", "물병은 우물에서 채울 수 있고, 하수구의 것은 다른 용도입니다."]},
+  {"t": "시청과 고윈 구출", "h": ["셀레나로 변신하면 스콜 경비가 길을 열어 줍니다. 말투도 셀레나처럼 명령하세요.", "약효는 오래가지 않습니다. 볼일을 먼저 정리하고 마시세요."]},
+  {"t": "웨어게이트와 용", "h": ["웨어게이트의 석상(가고일)은 여성의 목소리로 이름을 불러야 열립니다. 이름은 야만인 울타르가 알고 있습니다.", "용을 진정시키는 약초 세 가지는 약재상에게 부탁하고, 부족한 재료는 마을 정원과 시청 앞을 확인하세요.", "동굴의 두개골은 문을 여는 장치입니다. 힘이 세거나 도구가 있어야 움직입니다."]},
+  {"t": "성 (마지막)", "h": ["성에 들어가는 방법은 상점 주인 이완과 스콜의 대화를 엿듣는 데서 시작됩니다.", "주방의 통(마개)과 도개교의 윈치는 미노우와 협력해 해결합니다. 기름진 것이 뻑뻑한 장치에 도움이 됩니다.", "용이 준 '게스린의 눈'은 마지막에 셀레나 앞에서만 쓰세요. 그 전엔 보지 마세요."]}
+ ],
+ "en": [
+  {"t": "Cell (start)", "h": ["Examine and push the loose brick; you can see into the next cell through the gap.", "You can carry the torch, and straw burns well. Use it to draw the guard in.", "Slip out while the guard is inside and bar the door from the outside."]},
+  {"t": "Dungeon (torture room & guard room)", "h": ["Ratpouch on the rack needs his straps cut with something sharp.", "Fill the bottle from the barrel in the guard room; the prisoner has last words for you.", "The sack opens with the knife. Something useful is inside.", "Use 'Tell' to have Ratpouch do things for you where you can't reach."]},
+  {"t": "Turnvale (1)", "h": ["Find Luthern the blacksmith first: the forge on Smithy Street, or one of the taverns.", "Wulf's warning about 'the girl' means Goewin, the apothecary.", "Townsfolk wander on their own schedules. If someone's missing, wait or check another screen."]},
+  {"t": "Turnvale (2)", "h": ["Grub the beggar speaks in riddles but eventually hands over a tool. Buying him a drink helps.", "Taidgh's house in the Market Place is locked; only one person has a lockpick.", "Think twice before handing anything to Morkus. Getting it back is hard."]},
+  {"t": "The potion of transformation", "h": ["Taidgh's diary lists the ingredients and the order: burner → heat → tap.", "You need something of Selena's. Look for what she left behind in town.", "Fill the flask at the well; the sewer is for something else."]},
+  {"t": "Town Hall & rescuing Goewin", "h": ["Disguised as Selena, the Skorl guard lets you through. Give orders like she would.", "The potion doesn't last long. Finish your errands first, then drink."]},
+  {"t": "The Weregate & the Dragon", "h": ["The gargoyles open the gate only for a woman calling their names. Ultar the barbarian knows the names.", "Ask the apothecary for the three-herb infusion; missing herbs grow in a front garden and lie near the Town Hall.", "The skulls in the cave are the door mechanism; you need strength or a tool to turn them."]},
+  {"t": "The Castle (endgame)", "h": ["Getting in starts with overhearing the shopkeeper Ewan and a Skorl.", "The cask bung in the kitchen and the drawbridge winch are solved with Minnow's help; grease loosens stiff machinery.", "Use the Eye of Gethryn only at the very end, in front of Selena. Don't look at it before."]}
+ ]
+}

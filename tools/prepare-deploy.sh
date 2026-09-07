@@ -7,11 +7,13 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/deploy"
 ENG="$ROOT/engine/scummvm/build-emscripten"
 test -f "$ENG/scummvm.wasm" || { echo "run npm run engine:build && npm run data:stage first" >&2; exit 1; }
+test -f "$ROOT/server/src/server.ts"
 rm -rf "$OUT"; mkdir -p "$OUT/public/engine/data" "$OUT/public/games/lure" "$OUT/public/fonts" "$OUT/games/lure"
 
 # 셸 소스
 cp -R "$ROOT/src" "$OUT/src"
-cp "$ROOT/index.html" "$ROOT/vite.config.ts" "$ROOT/tsconfig.json" "$ROOT/server.js" "$ROOT/NOTES.md" "$OUT/"
+cp "$ROOT/index.html" "$ROOT/vite.config.ts" "$ROOT/tsconfig.json" "$ROOT/NOTES.md" "$OUT/"
+cp -R "$ROOT/server" "$OUT/server"                       # agent8 서버 함수(server/src/server.ts)
 cp -R "$ROOT/engine-patches" "$OUT/engine-patches"      # GPLv3 소스 공개 의무(엔진 수정분)
 mkdir -p "$OUT/docs"; cp "$ROOT/docs/DEPLOY-VERSE8.md" "$ROOT/docs/STORE.md" "$OUT/docs/" 2>/dev/null || true
 cp "$ROOT/public/scummvm.ini" "$OUT/public/"
