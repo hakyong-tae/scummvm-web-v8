@@ -46,8 +46,8 @@ export class TrackpadFSM {
     if (!this.active) return []
     this.active = false
     if (this.rightHeld) { this.rightHeld = false; return [{ type: 'rup' }] }
-    if (!this.moved && t - this.downAt <= this.tapMs) return [{ type: 'click', button: 0 }]
-    if (!this.moved && this.opts.mode === 'direct') return [{ type: 'click', button: 0 }]
+    // 움직이지 않고 손을 뗐으면 길이와 무관하게 클릭. (롱프레스는 tick()이 먼저 rdown으로 바꿔 놓는다)
+    if (!this.moved) return [{ type: 'click', button: 0 }]
     return []
   }
 }
@@ -68,7 +68,10 @@ export function attachTrackpad(overlay: HTMLElement, canvas: HTMLCanvasElement, 
       switch (a.type) {
         case 'warp': cx = a.x; cy = a.y; clamp(); fire('pointermove'); break
         case 'move': cx += a.dx; cy += a.dy; clamp(); fire('pointermove'); break
-        case 'click': buttons = 1; fire('pointerdown', 0); buttons = 0; fire('pointerup', 0); break
+        case 'click':
+          buttons = 1; fire('pointerdown', 0)
+          setTimeout(() => { buttons = 0; fire('pointerup', 0) }, 70)   // 같은 틱에 up까지 보내면 엔진 폴링이 눌림을 놓칠 수 있음
+          break
         case 'rdown': buttons = 2; fire('pointerdown', 2); break
         case 'rup': buttons = 0; fire('pointerup', 2); break
       }

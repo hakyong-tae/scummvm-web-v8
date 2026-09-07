@@ -64,9 +64,19 @@ await page.mouse.up({ button: 'right' }); await sleep(6000)
 }
 const dialogState = await dump(); console.log('after Look:', JSON.stringify(dialogState))
 await page.screenshot({ path: outDir + tag + 'dialog.png' })
-await page.mouse.click(gx(160), gy(180)); await sleep(2500)   // 대화창 닫기
+if (touch) { const ts = page.touchscreen; await ts.touchStart(gx(160), gy(180)); await sleep(320); await ts.touchEnd(); await sleep(2500) }  // 느린 탭(320ms)으로 대화창 닫기
+else { await page.mouse.click(gx(160), gy(180)); await sleep(2500) }   // 대화창 닫기
 const closedState = await dump(); console.log('after close:', JSON.stringify(closedState))
-if (touch) { const t2 = await dump(); console.log('touch final:', JSON.stringify(t2)) }
+if (touch) {
+  // 설명창이 떠 있으면 빠른 탭(80ms)으로 닫히는지 확인 — 폰에서 "설명창 뒤 클릭 안 됨" 회귀 방지
+  const before = await dump()
+  if (before.some(t => t.includes('@81,'))) {
+    const ts = page.touchscreen; await ts.touchStart(gx(200), gy(180)); await sleep(80); await ts.touchEnd(); await sleep(2000)
+    const after = await dump(); console.log('touch dismiss:', before.length, '→', after.length, JSON.stringify(after))
+    if (after.some(t => t.includes('@81,'))) { console.log('DIALOG NOT DISMISSED BY TOUCH TAP'); process.exitCode = 1 }
+  }
+  const t2 = await dump(); console.log('touch final:', JSON.stringify(t2))
+}
 const koDivs = await page.evaluate(() => [...document.querySelectorAll('#textlayer .ko')].map(d => ({ t: d.textContent, font: d.dataset.font, left: d.style.left, top: d.style.top })))
 console.log('ko blocks:', JSON.stringify(koDivs))
 await page.screenshot({ path: outDir + tag + 'closed.png' })

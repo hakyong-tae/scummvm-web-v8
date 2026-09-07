@@ -21,6 +21,11 @@ describe('TrackpadFSM (trackpad mode)', () => {
     expect(f.move(100, 130, 600)).toEqual([{ type: 'move', dx: 0, dy: 30 }])
     expect(f.up(700)).toEqual([{ type: 'rup' }])
   })
+  it('a slow tap (300ms, shorter than long-press) is still a click', () => {
+    const f = new TrackpadFSM({ mode: 'trackpad' })
+    f.down(50, 50, 0); expect(f.tick(300)).toEqual([])
+    expect(f.up(300)).toEqual([{ type: 'click', button: 0 }])
+  })
   it('small jitter within 8px still counts as tap', () => {
     const f = new TrackpadFSM({ mode: 'trackpad' })
     f.down(100, 100, 0); f.move(103, 102, 60)
