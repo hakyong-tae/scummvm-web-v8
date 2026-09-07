@@ -14,6 +14,10 @@
     node tools/smoke.mjs --lang=ko http://localhost:3047/g/lure/   # SMOKE OK 이어야 함
 
 ## 2. GitLab에 올리기 (토큰은 verse8.io 채팅 ⋯ → Git Access → Generate Token, 1회만 표시)
+
+    bash tools/push-verse8.sh <glpat-토큰> "커밋 메시지"    # 임시 디렉터리에서만 작업, 클론 실패 시 즉시 중단
+
+수동으로 할 경우:
     git clone -b develop https://oauth2:<TOKEN>@gitlab.verse8.io/<user>/<repo>.git v8repo
     cd v8repo
     # 플랫폼 파일 보존: .env .agent8.lock committedAt 는 남기고 나머지 템플릿 삭제

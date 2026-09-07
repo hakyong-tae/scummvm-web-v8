@@ -93,7 +93,9 @@ console.log('errors:', errs.length, errs.slice(0, 5))
 const perf = logs.filter(l => l.includes('[perf]'))
 console.log('perf:', perf.slice(-2))
 await browser.close()
-const koOk = lang !== 'ko' || (koDivs.length >= 2 && koDivs.every(d => /[가-힣]/.test(d.t)))
-const ok = menuState.length >= 2 && dialogState.length >= 3 && closedState.length < dialogState.length && state.spans.length === state.recs.length && errs.length === 0 && koOk
+const koOk = lang !== 'ko' || (koDivs.length >= 1 && koDivs.every(d => /[가-힣]/.test(d.t)))   // 터치 모드는 마지막에 설명창을 닫아 상태줄 1개만 남는다
+const checks = { menu: menuState.length >= 2, dialog: dialogState.length >= 3, closed: closedState.length < dialogState.length, layer: state.spans.length === state.recs.length, noErrors: errs.length === 0, koOk, touchDismiss: process.exitCode !== 1 }
+console.log('checks:', JSON.stringify(checks))
+const ok = Object.values(checks).every(Boolean)
 console.log(ok ? 'SMOKE OK' : 'SMOKE FAIL')
 process.exit(ok ? 0 : 1)
