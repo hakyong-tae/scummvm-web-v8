@@ -31,8 +31,8 @@
 
 ## 5. 광고·결제
 - **수익화 설명**:
-  KO: 전면 광고 — [게임 시작] 버튼을 누르면 엔진 로딩 전에 1회, 게임 종료(Quit) 시 1회. 자발적(Opt-in) 광고 — 게임 중 우상단 `💡 힌트` 버튼 → 광고를 끝까지 보면 이번 세션 동안 구간별 공략 힌트 열람. VX 결제 — 없음(원작 프리웨어 라이선스가 게임 유료화를 금지하므로 유료 해금 없음).
-  EN: Interstitial — once when pressing Start (before the engine loads) and once on Quit. Opt-in (rewarded) — the `💡 Hints` button (top-right) during play; watching to the end unlocks walkthrough hints for the session. VX purchases — none (the original's freeware license forbids charging for the game).
+  KO: 전면 광고 — [게임 시작] 버튼을 누르면 엔진 로딩 전에 1회, 게임 종료(Quit) 시 1회. 자발적(Opt-in) 광고 — 게임 중 우상단 `💡 힌트` 버튼 → 광고 한 편을 끝까지 보면 힌트 하나가 열림(기기에 저장). VX 결제 — 없음(원작 프리웨어 라이선스가 게임 유료화를 금지하므로 유료 해금 없음).
+  EN: Interstitial — once when pressing Start (before the engine loads) and once on Quit. Opt-in (rewarded) — the `💡 Hints` button (top-right) during play; one full ad unlocks one walkthrough hint (kept on the device). VX purchases — none (the original's freeware license forbids charging for the game).
 - **보상**: ☑ 끝까지 보면 보상(힌트 해금) ☑ 중간에 닫으면 보상 없음 ☑ 중간에 닫아도 불이익 없음(다시 시도 가능)
 - **타임아웃 120초**: ☑ 네 — 모든 호출(`showInterstitial` 2곳, `showRewarded` 1곳)에 `timeoutMs: 120_000` 명시 (`src/verse8/ads.ts`)
 - **VX 결제**: 결제 기능 없음 / No purchases

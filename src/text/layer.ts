@@ -56,7 +56,7 @@ export class TextLayer {
         b.records.forEach((r, i) => {
           const key = `${r.x},${r.y},${r.t}`
           live.add(key)
-          const box: TextBlock = { ...b, x: r.x, y: r.y, w: r.w, h: r.h, records: [r], joined: r.t }
+          const box: TextBlock = { ...b, x: r.x, y: r.y, w: r.w, h: r.h, color: r.c, bg: r.b, records: [r], joined: r.t }   // 줄마다 원래 색(팝업의 '선택 줄=흰색' 강조 유지)
           this.placeKo(this.koDiv(key), box, tr.lines[i], undefined, 0)
         })
         continue

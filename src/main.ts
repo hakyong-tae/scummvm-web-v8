@@ -100,7 +100,15 @@ function applyUiLang() {
   document.querySelectorAll<HTMLElement>('[data-ui-title]').forEach(el => { const v = s[el.dataset.uiTitle!]; if (typeof v === 'string') el.title = v })
   selLang.value = prefs.lang
   if (!startBtn.disabled) startBtn.textContent = s.start
+  $('controlsHelp').textContent = coarse ? s.touchHelp : s.pcHelp
   updateCloudBadge()
+}
+/** 부팅 후 1회 조작 안내 토스트(기기별 저장) */
+function showControlsToast() {
+  if (localStorage.getItem('lure.toast.controls')) return
+  const t = $('toast'); const s = ui(prefs.lang)
+  t.textContent = `${s.controlsTitle}: ${coarse ? s.touchHelp : s.pcHelp}`; t.hidden = false
+  setTimeout(() => { t.hidden = true; localStorage.setItem('lure.toast.controls', '1') }, 9000)
 }
 const syncLangUi = () => applyUiLang()
 langBtn.onclick = () => { prefs.lang = prefs.lang === 'ko' ? 'en' : 'ko'; syncLangUi() }
@@ -144,7 +152,7 @@ startBtn.onclick = async () => {
     canvas, engineBase: assetUrl('engine/'), args: ['lure'],
     callbacks: {
       onStatus: (t) => { statusEl.textContent = t },
-      onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); setTimeout(() => void sync.start(), 3000) },
+      onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); setTimeout(() => void sync.start(), 3000); if (!promo) setTimeout(showControlsToast, 2500) },
       onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs); watchConfirm(recs) },
       onString: (table, local, text, hotspot, char) => { dict?.onString(table, local, text, hotspot, char) },
       onQuit: async () => { $('hud').hidden = true; await playInterstitialAd(AD_PLACEMENT_QUIT); $('quit').classList.add('on') },

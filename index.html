@@ -59,6 +59,8 @@
   #quit{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#000;z-index:25}
   #quit.on{display:flex}
   #quit button{font-size:18px;padding:12px 32px;cursor:pointer}
+  #toast{position:fixed;left:50%;bottom:6%;transform:translateX(-50%);background:rgba(10,10,10,.92);color:#f1dfa8;border:1px solid #6b5426;border-radius:8px;padding:10px 16px;font-size:14px;z-index:9;max-width:90vw;text-align:center}
+  #toast[hidden]{display:none}
   .touch-only{display:none}
   body.touch .touch-only{display:inline-block}
   #yn{position:fixed;left:50%;top:62%;transform:translateX(-50%);display:flex;gap:14px;z-index:7}
@@ -103,7 +105,7 @@
   <div id="settings">
     <label><span data-ui="touchMode">터치 조작</span> <select id="selTouch"><option value="trackpad" data-ui="touchTrackpad">트랙패드(드래그로 커서)</option><option value="direct" data-ui="touchDirect">직접 탭</option></select></label>
     <label><span data-ui="subtitles">자막</span> <select id="selLang"><option value="ko">한국어</option><option value="en">English</option></select></label>
-    <div style="color:#888;font-size:11px;margin-top:6px" data-ui="touchHelp">길게 누르면 동작 메뉴 · 드래그해서 고르고 손을 떼면 실행</div>
+    <div style="color:#888;font-size:11px;margin-top:6px" id="controlsHelp"></div>
   </div>
   <div id="start">
     <h1 id="title">Lure of the Temptress</h1>
@@ -119,6 +121,7 @@
   </div>
   <div id="rotate"><span data-ui="rotate">가로로 돌려 주세요</span><br><small style="color:#999" data-ui="rotateSub">이 게임은 가로 화면에 맞춰져 있습니다</small></div>
   <div id="promo"><div class="pt">Lure of the Temptress</div><div class="ps">유혹의 마녀 · 한글판</div><div class="pb">설치 없이 · <b>한글 자막</b> · 폰에서도 · 클라우드 세이브</div></div>
+  <div id="toast" hidden></div>
   <div id="quit"><div data-ui="quit">게임을 종료했습니다.</div><button id="restartBtn" data-ui="restart">다시 시작</button></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
