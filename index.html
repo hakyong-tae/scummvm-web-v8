@@ -29,6 +29,11 @@
   #textlayer span{position:absolute;white-space:pre;line-height:1;font-family:'NeoDGM',monospace}
   #textlayer .ko{position:absolute;white-space:pre;font-family:'NeoDGM',monospace;text-shadow:0 0 0 currentColor}
   #touchpad{position:absolute;inset:0;touch-action:none;display:none}
+  /* 대화 선택지 강조(터치 기기): 트랙패드 위층에 탭 가능한 버튼으로 얹음 */
+  #choices{position:absolute;inset:0;pointer-events:none}
+  #choices button{position:absolute;pointer-events:auto;font-family:'NeoDGM',monospace;text-align:left;background:rgba(20,14,6,.92);color:#f1dfa8;border:2px solid #c99b3a;border-radius:6px;padding:0 10px;box-shadow:0 0 0 2px rgba(0,0,0,.6),0 2px 10px rgba(0,0,0,.6);cursor:pointer;white-space:nowrap;animation:choicePulse 1.2s ease-in-out infinite alternate}
+  #choices button::before{content:'▶ ';color:#e8c56a}
+  @keyframes choicePulse{from{border-color:#c99b3a}to{border-color:#fff3c4}}
   #touchpad.on{display:block}
   #hud{position:fixed;top:6px;right:8px;display:flex;gap:6px;z-index:5}
   #hud[hidden]{display:none}
@@ -88,6 +93,7 @@
       <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
       <div id="textlayer"></div>
       <div id="touchpad"></div>
+      <div id="choices"></div>
     </div>
   </div>
   <div id="hud" hidden>

@@ -92,3 +92,14 @@ export function attachTrackpad(overlay: HTMLElement, canvas: HTMLCanvasElement, 
   overlay.addEventListener('pointerup', end); overlay.addEventListener('pointercancel', end)
   return { getCursor: () => ({ x: cx, y: cy }) }
 }
+
+/** 화면 CSS 좌표에 합성 클릭(pointermove → pointerdown → 70ms → pointerup). 선택지 버튼 등 터치 보조 UI에서 사용. */
+export async function clickAtCss(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
+  const ev = (type: string, button: number, buttons: number) =>
+    canvas.dispatchEvent(new PointerEvent(type, { clientX, clientY, button, buttons, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true, cancelable: true }))
+  ev('pointermove', 0, 0)
+  await new Promise(r => setTimeout(r, 60))
+  ev('pointerdown', 0, 1)
+  await new Promise(r => setTimeout(r, 70))
+  ev('pointerup', 0, 0)
+}

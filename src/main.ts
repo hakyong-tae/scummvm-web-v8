@@ -4,7 +4,7 @@ import { KoDict, type EnDump, type KoData } from './i18n/dict'
 import { StatusComposer } from './i18n/status'
 import { resolveBlock } from './i18n/resolve'
 import { assetUrl, GAME_TITLE, AD_PLACEMENT_START, AD_PLACEMENT_QUIT } from './config'
-import { TrackpadFSM, attachTrackpad } from './input/trackpad'
+import { TrackpadFSM, attachTrackpad, clickAtCss } from './input/trackpad'
 import { playInterstitialAd } from './verse8/ads'
 import { SaveSyncController } from './save/syncController'
 import { openNotice } from './ui/notice'
@@ -62,6 +62,34 @@ $('kbdSend').onclick = async () => { await typeText(canvas, kbdInput.value); kbd
 $('kbdEnter').onclick = () => pressKey(canvas, 'Enter')
 $('kbdBack').onclick = () => pressKey(canvas, 'Backspace')
 kbdInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); void typeText(canvas, kbdInput.value).then(() => { kbdInput.value = ''; pressKey(canvas, 'Enter') }) } })
+/** 대화 선택지(TALK_SELECT: 화면 x=0, y=8·16·…의 줄들, hotspots.cpp:3537)를 감지해 터치 기기에서 탭 가능한 버튼으로 강조 */
+const choicesEl = $('choices')
+let choicesKey = ''
+function watchTalkChoices(recs: { x: number; y: number; w: number; h: number; t: string }[]) {
+  if (!coarse) return
+  const head = recs.find(r => r.x === 0 && r.y === 0)
+  const lines = recs.filter(r => r.x === 0 && r.y >= 8 && r.y <= 40 && r.y % 8 === 0 && r.w > 0).sort((a, b) => a.y - b.y)
+  const isTalk = !!head && /^(Talk to|Ask|Tell)\b/.test(head.t) && lines.length > 0
+  const key = isTalk ? lines.map(l => `${l.y}:${l.t}`).join('|') : ''
+  if (key === choicesKey) return
+  choicesKey = key
+  choicesEl.innerHTML = ''
+  if (!isTalk) return
+  const rect = canvas.getBoundingClientRect(); const sx = rect.width / 320, sy = rect.height / 200
+  lines.forEach((l, i) => {
+    const b = document.createElement('button')
+    b.textContent = dict?.lookup(l.t) ?? l.t
+    const top = l.y * sy, hgt = Math.max(8 * sy, 30)
+    b.style.left = `${2 * sx}px`; b.style.top = `${top + (8 * sy - hgt) / 2}px`; b.style.height = `${hgt}px`
+    b.style.fontSize = `${Math.max(8 * sy * 0.9, 14)}px`; b.style.animationDelay = `${i * 0.15}s`
+    b.onclick = async (e) => { e.preventDefault(); await clickAtCss(canvas, rect.left + 40 * sx, rect.top + (l.y + 4) * sy) }
+    choicesEl.appendChild(b)
+  })
+  if (!localStorage.getItem('lure.toast.choices')) {
+    const t = $('toast'); t.textContent = ui(prefs.lang).choicesHint; t.hidden = false
+    setTimeout(() => { t.hidden = true; localStorage.setItem('lure.toast.choices', '1') }, 6000)
+  }
+}
 /** 엔진 텍스트에서 y/n 확인창을 감지해 터치 버튼 표시(터치 기기만) */
 function watchConfirm(recs: { t: string }[]) {
   if (!coarse) return
@@ -153,7 +181,7 @@ startBtn.onclick = async () => {
     callbacks: {
       onStatus: (t) => { statusEl.textContent = t },
       onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); setTimeout(() => void sync.start(), 3000); if (!promo) setTimeout(showControlsToast, 2500) },
-      onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs); watchConfirm(recs) },
+      onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs); watchConfirm(recs); watchTalkChoices(recs) },
       onString: (table, local, text, hotspot, char) => { dict?.onString(table, local, text, hotspot, char) },
       onQuit: async () => { $('hud').hidden = true; await playInterstitialAd(AD_PLACEMENT_QUIT); $('quit').classList.add('on') },
     },
