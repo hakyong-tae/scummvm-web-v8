@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { StatusComposer } from '../src/i18n/status'
 import { KoDict } from '../src/i18n/dict'
-const en = { list: ['Look at', 'Get', 'Give', ' to ', ' for ', 'Lock'], tables: [['Cell door', 'Ratpouch', 'key', 'Lock'], [], []] }
-const ko = { list: { '0': '{1} 보기', '1': '{1:을} 가져가기', '2': '{2}에게 {1} 주기|주기', '5': '{1:을} 잠그기|잠그기' }, t: { '0:0': '감옥 문', '0:1': '랫파우치', '0:2': '열쇠', '0:3': '자물쇠' } }
+const list: string[] = new Array(46).fill(''); Object.assign(list, { 0: 'Look at', 1: 'Get', 2: 'Give', 3: ' to ', 4: ' for ', 5: 'Lock', 41: 'You are carrying ', 42: 'nothing', 43: 'You have ', 44: 'groat', 45: 'groats' })
+const en = { list, tables: [['Cell door', 'Ratpouch', 'key', 'Lock', 'Bottle', 'Knife'], [], []] }
+const ko = { list: { '0': '{1} 보기', '1': '{1:을} 가져가기', '2': '{2}에게 {1} 주기|주기', '5': '{1:을} 잠그기|잠그기', '41': '소지품: {1}', '42': '없음', '43': '보유 금액: {1}', '44': '그로트', '45': '그로트' }, t: { '0:0': '감옥 문', '0:1': '랫파우치', '0:2': '열쇠', '0:3': '자물쇠', '0:4': '병', '0:5': '칼' } }
 describe('StatusComposer', () => {
   const sc = new StatusComposer(new KoDict(en, ko), en, ko, { to: 3, for: 4 })
   it('action + name', () => { expect(sc.compose('Look at Cell door')).toBe('감옥 문 보기') })
@@ -12,6 +13,12 @@ describe('StatusComposer', () => {
   it('applies josa in action templates', () => { expect(sc.compose('Get key')).toBe('열쇠를 가져가기'); expect(sc.compose('Get Cell door')).toBe('감옥 문을 가져가기') })
   it('ambiguous word: name by default, action when preferAction (popup menu)', () => {
     expect(sc.compose('Lock')).toBe('자물쇠'); expect(sc.compose('Lock', true)).toBe('잠그기')
+  })
+  it('status dialog: carrying items / nothing / groats keep the variable part', () => {
+    expect(sc.compose('You are carrying : Bottle, Knife')).toBe('소지품: 병, 칼')
+    expect(sc.compose('You are carrying nothing')).toBe('소지품: 없음')
+    expect(sc.compose('You have 12 groats')).toBe('보유 금액: 12 그로트')
+    expect(sc.compose('You have 1 groat')).toBe('보유 금액: 1 그로트')
   })
   it('bare action label for popup menus', () => { expect(sc.compose('Give')).toBe('주기'); expect(sc.compose('Look at')).toBe('보기') })
 })

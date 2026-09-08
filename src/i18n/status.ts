@@ -6,8 +6,11 @@ import { josa } from './josa'
 export class StatusComposer {
   private actions: { en: string; idx: number }[]
   private connectors: { en: string; key: 'to' | 'for' | 'on' }[]
+  private en: EnDump
   constructor(private dict: KoDict, en: EnDump, private ko: KoData, conn: { to?: number; for?: number; on?: number }) {
-    this.actions = en.list.map((s, idx) => ({ en: normalizeEn(s), idx }))
+    this.en = en
+    // Action enum 범위(index 0..24)만 동작 단어. 그 뒤(S_* 고정 문구)는 composeFixed가 따로 처리한다.
+    this.actions = en.list.slice(0, 25).map((s, idx) => ({ en: normalizeEn(s), idx }))
       .filter(a => a.en && ko.list[String(a.idx)]).sort((a, b) => b.en.length - a.en.length)
     this.connectors = (['to', 'for', 'on'] as const).filter(k => conn[k] !== undefined)
       .map(k => ({ en: normalizeEn(en.list[conn[k]!]), key: k }))
@@ -19,6 +22,7 @@ export class StatusComposer {
   }
   compose(line: string, preferAction = false): string | null {
     const s = normalizeEn(line)
+    const fixed = this.composeFixed(s); if (fixed) return fixed
     const exactAction = this.actions.find(a => s === a.en)
     if (preferAction && exactAction) return this.bareLabel(exactAction.idx)
     const direct = this.dict.lookup(s) ?? (this.dict.koName(s) !== s ? this.dict.koName(s) : null)
@@ -36,5 +40,23 @@ export class StatusComposer {
     const k1 = n1 ? this.dict.koName(n1) : '', k2 = n2 ? this.dict.koName(n2) : ''
     return full.replace(/\{([12])(?::([^}]+))?\}/g, (_m, i: string, p?: string) => { const k = i === '1' ? k1 : k2; return p ? josa(k, p) : k })
       .replace(/\s+/g, ' ').trim()
+  }
+
+  /** 상태창 고정 문구(hotspots.cpp doShowStatus): "You are carrying : a, b" / "You are carrying nothing" / "You have 12 groats" */
+  private composeFixed(s: string): string | null {
+    const L = (i: number) => normalizeEn(this.en.list[i] ?? '')
+    const K = (i: number) => this.ko.list[String(i)]
+    const carrying = L(41), nothing = L(42), have = L(43)
+    if (carrying && K(41) && (s === carrying || s.startsWith(carrying + ' ') || s.startsWith(carrying + ':'))) {
+      const rest = s.slice(carrying.length).replace(/^\s*:\s*/, '').trim()
+      const items = !rest || rest === nothing ? (K(42) ?? rest) : rest.split(/,\s*/).map(n => this.dict.koName(n)).join(', ')
+      return K(41).includes('{1}') ? K(41).replace('{1}', items) : `${K(41)}${items}`
+    }
+    if (have && K(43) && s.startsWith(have + ' ')) {
+      let rest = s.slice(have.length).trim()
+      for (const i of [45, 44]) { const w = L(i); if (w && K(i)) rest = rest.replace(new RegExp(`\\b${w}\\b`), K(i)) }
+      return K(43).includes('{1}') ? K(43).replace('{1}', rest) : `${K(43)}${rest}`
+    }
+    return null
   }
 }
