@@ -76,12 +76,13 @@ function watchTalkChoices(recs: { x: number; y: number; w: number; h: number; t:
   choicesEl.innerHTML = ''
   if (!isTalk) return
   const rect = canvas.getBoundingClientRect(); const sx = rect.width / 320, sy = rect.height / 200
+  // 엔진 줄(8px 피치)은 손가락엔 너무 촘촘 → 상태줄 아래부터 넉넉한 간격으로 세로 나열. 탭 시 클릭은 원래 줄 위치로 보낸다.
+  const hgt = Math.max(8 * sy, 30), gap = 6, startTop = 8 * sy + 4
   lines.forEach((l, i) => {
     const b = document.createElement('button')
     b.textContent = dict?.lookup(l.t) ?? l.t
-    const top = l.y * sy, hgt = Math.max(8 * sy, 30)
-    b.style.left = `${2 * sx}px`; b.style.top = `${top + (8 * sy - hgt) / 2}px`; b.style.height = `${hgt}px`
-    b.style.fontSize = `${Math.max(8 * sy * 0.9, 14)}px`; b.style.animationDelay = `${i * 0.15}s`
+    b.style.left = `${2 * sx}px`; b.style.top = `${startTop + i * (hgt + gap)}px`; b.style.height = `${hgt}px`
+    b.style.fontSize = `${Math.min(Math.max(8 * sy * 0.9, 14), 22)}px`; b.style.animationDelay = `${i * 0.15}s`
     b.onclick = async (e) => { e.preventDefault(); await clickAtCss(canvas, rect.left + 40 * sx, rect.top + (l.y + 4) * sy) }
     choicesEl.appendChild(b)
   })
@@ -180,7 +181,7 @@ startBtn.onclick = async () => {
     canvas, engineBase: assetUrl('engine/'), args: ['lure'],
     callbacks: {
       onStatus: (t) => { statusEl.textContent = t },
-      onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); setTimeout(() => void sync.start(), 3000); if (!promo) setTimeout(showControlsToast, 2500) },
+      onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); if (params.get('debug') === '1') (window.Module as Record<string, unknown>).lureDebug = true; setTimeout(() => void sync.start(), 3000); if (!promo) setTimeout(showControlsToast, 2500) },
       onFrameText: (recs) => { (window as unknown as { __lureText: unknown }).__lureText = recs; layer.render(recs); watchConfirm(recs); watchTalkChoices(recs) },
       onString: (table, local, text, hotspot, char) => { dict?.onString(table, local, text, hotspot, char) },
       onQuit: async () => { $('hud').hidden = true; await playInterstitialAd(AD_PLACEMENT_QUIT); $('quit').classList.add('on') },

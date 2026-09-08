@@ -1869,6 +1869,1907 @@
    "What a disgusting sight! Oh well, I don't need to worry about him any more."
   ]
  ],
+ "hotspots": [
+  {
+   "id": 1000,
+   "nameId": 71,
+   "name": "Diermot",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1001,
+   "nameId": 241,
+   "name": "Ratpouch",
+   "room": 5,
+   "talkHeader": 1,
+   "talkScript": 5717,
+   "actions": 28844
+  },
+  {
+   "id": 1002,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 3,
+   "talkHeader": 1,
+   "talkScript": 5570,
+   "actions": 27993
+  },
+  {
+   "id": 1003,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 23,
+   "talkHeader": 1,
+   "talkScript": 5460,
+   "actions": 29382
+  },
+  {
+   "id": 1004,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 10,
+   "talkHeader": 1,
+   "talkScript": 5460,
+   "actions": 30650
+  },
+  {
+   "id": 1005,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 10,
+   "talkHeader": 1,
+   "talkScript": 5653,
+   "actions": 31190
+  },
+  {
+   "id": 1006,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 36,
+   "talkHeader": 1,
+   "talkScript": 5544,
+   "actions": 31511
+  },
+  {
+   "id": 1007,
+   "nameId": 2133,
+   "name": "Goewin",
+   "room": 31,
+   "talkHeader": 1,
+   "talkScript": 5467,
+   "actions": 32020
+  },
+  {
+   "id": 1008,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 36,
+   "talkHeader": 1,
+   "talkScript": 5544,
+   "actions": 31757
+  },
+  {
+   "id": 1009,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 19,
+   "talkHeader": 1,
+   "talkScript": 5397,
+   "actions": 28126
+  },
+  {
+   "id": 1010,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 44,
+   "talkHeader": 1,
+   "talkScript": 5499,
+   "actions": 28997
+  },
+  {
+   "id": 1011,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 99,
+   "talkHeader": 0,
+   "talkScript": 5634,
+   "actions": 27993
+  },
+  {
+   "id": 1032,
+   "nameId": 139,
+   "name": "Torch",
+   "room": 2,
+   "talkHeader": 0,
+   "talkScript": 2817,
+   "actions": 32306
+  },
+  {
+   "id": 1033,
+   "nameId": 139,
+   "name": "Torch",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 4096,
+   "actions": 32306
+  },
+  {
+   "id": 1034,
+   "nameId": 139,
+   "name": "Torch",
+   "room": 4,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 32306
+  },
+  {
+   "id": 1036,
+   "nameId": 205,
+   "name": "Pouch",
+   "room": 2,
+   "talkHeader": 0,
+   "talkScript": 7744,
+   "actions": 27340
+  },
+  {
+   "id": 1037,
+   "nameId": 238,
+   "name": "Sack",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 2180,
+   "actions": 33829
+  },
+  {
+   "id": 1038,
+   "nameId": 0,
+   "name": "",
+   "room": 32769,
+   "talkHeader": 0,
+   "talkScript": 6736,
+   "actions": 27991
+  },
+  {
+   "id": 1039,
+   "nameId": 139,
+   "name": "Torch",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 58369,
+   "actions": 32765
+  },
+  {
+   "id": 1040,
+   "nameId": 143,
+   "name": "Rack",
+   "room": 4,
+   "talkHeader": 0,
+   "talkScript": 32784,
+   "actions": 32815
+  },
+  {
+   "id": 1041,
+   "nameId": 72,
+   "name": "Serf",
+   "room": 4,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 32892
+  },
+  {
+   "id": 1042,
+   "nameId": 146,
+   "name": "Prisoner",
+   "room": 2,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 32966
+  },
+  {
+   "id": 1046,
+   "nameId": 0,
+   "name": "",
+   "room": 7,
+   "talkHeader": 0,
+   "talkScript": 4096,
+   "actions": 27991
+  },
+  {
+   "id": 1047,
+   "nameId": 309,
+   "name": "Sewerage",
+   "room": 7,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 32628
+  },
+  {
+   "id": 1048,
+   "nameId": 211,
+   "name": "Fire",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 32797,
+   "actions": 32538
+  },
+  {
+   "id": 1049,
+   "nameId": 211,
+   "name": "Fire",
+   "room": 4,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 32538
+  },
+  {
+   "id": 1050,
+   "nameId": 0,
+   "name": "",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 1051,
+   "nameId": 213,
+   "name": "Window",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 6673,
+   "actions": 33415
+  },
+  {
+   "id": 1052,
+   "nameId": 0,
+   "name": "",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 27991
+  },
+  {
+   "id": 1053,
+   "nameId": 0,
+   "name": "",
+   "room": 4,
+   "talkHeader": 0,
+   "talkScript": 46858,
+   "actions": 27991
+  },
+  {
+   "id": 1054,
+   "nameId": 139,
+   "name": "Torch",
+   "room": 2,
+   "talkHeader": 0,
+   "talkScript": 2817,
+   "actions": 32306
+  },
+  {
+   "id": 1055,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 28,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 34893
+  },
+  {
+   "id": 1056,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 29,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 34885
+  },
+  {
+   "id": 1057,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 32,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 35914
+  },
+  {
+   "id": 1058,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 12,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 34885
+  },
+  {
+   "id": 1059,
+   "nameId": 0,
+   "name": "",
+   "room": 30,
+   "talkHeader": 0,
+   "talkScript": 11530,
+   "actions": 0
+  },
+  {
+   "id": 1060,
+   "nameId": 2126,
+   "name": "Oil Burner",
+   "room": 30,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 32357
+  },
+  {
+   "id": 1061,
+   "nameId": 0,
+   "name": "",
+   "room": 424,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1062,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 31,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1063,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 14,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 34885
+  },
+  {
+   "id": 1064,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 31,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1065,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 32,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 33046
+  },
+  {
+   "id": 1066,
+   "nameId": 2315,
+   "name": "Poster",
+   "room": 20,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 27991
+  },
+  {
+   "id": 1067,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 29,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 34885
+  },
+  {
+   "id": 1068,
+   "nameId": 2454,
+   "name": "Gargoyle",
+   "room": 15,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1069,
+   "nameId": 2454,
+   "name": "Gargoyle",
+   "room": 15,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1070,
+   "nameId": 2516,
+   "name": "Right Skull",
+   "room": 38,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 33463
+  },
+  {
+   "id": 1071,
+   "nameId": 2515,
+   "name": "Left Skull",
+   "room": 38,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 33517
+  },
+  {
+   "id": 1072,
+   "nameId": 2516,
+   "name": "Right Skull",
+   "room": 39,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 33571
+  },
+  {
+   "id": 1073,
+   "nameId": 2515,
+   "name": "Left Skull",
+   "room": 39,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 33625
+  },
+  {
+   "id": 1074,
+   "nameId": 2516,
+   "name": "Right Skull",
+   "room": 40,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 33679
+  },
+  {
+   "id": 1075,
+   "nameId": 2515,
+   "name": "Left Skull",
+   "room": 40,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 33733
+  },
+  {
+   "id": 1076,
+   "nameId": 2573,
+   "name": "Dragon",
+   "room": 41,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 36528
+  },
+  {
+   "id": 1077,
+   "nameId": 0,
+   "name": "",
+   "room": 41,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1078,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 35,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 33123
+  },
+  {
+   "id": 1079,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 45,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1080,
+   "nameId": 73,
+   "name": "Skorl",
+   "room": 32810,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1081,
+   "nameId": 0,
+   "name": "",
+   "room": 32810,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1082,
+   "nameId": 4072,
+   "name": "?",
+   "room": 48,
+   "talkHeader": 0,
+   "talkScript": 49952,
+   "actions": 38339
+  },
+  {
+   "id": 1083,
+   "nameId": 0,
+   "name": "",
+   "room": 48,
+   "talkHeader": 0,
+   "talkScript": 49952,
+   "actions": 38339
+  },
+  {
+   "id": 1084,
+   "nameId": 0,
+   "name": "",
+   "room": 48,
+   "talkHeader": 0,
+   "talkScript": 1625,
+   "actions": 38339
+  },
+  {
+   "id": 1085,
+   "nameId": 4074,
+   "name": "?",
+   "room": 48,
+   "talkHeader": 0,
+   "talkScript": 37380,
+   "actions": 38473
+  },
+  {
+   "id": 1086,
+   "nameId": 0,
+   "name": "",
+   "room": 45,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 0
+  },
+  {
+   "id": 1087,
+   "nameId": 0,
+   "name": "",
+   "room": 6,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 27991
+  },
+  {
+   "id": 1088,
+   "nameId": 0,
+   "name": "",
+   "room": 6,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 27991
+  },
+  {
+   "id": 1089,
+   "nameId": 0,
+   "name": "",
+   "room": 6,
+   "talkHeader": 0,
+   "talkScript": 37380,
+   "actions": 27991
+  },
+  {
+   "id": 1090,
+   "nameId": 378,
+   "name": "Stranger",
+   "room": 29,
+   "talkHeader": 1,
+   "talkScript": 0,
+   "actions": 35994
+  },
+  {
+   "id": 1091,
+   "nameId": 0,
+   "name": "",
+   "room": 29,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1092,
+   "nameId": 0,
+   "name": "",
+   "room": 49,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 27991
+  },
+  {
+   "id": 1093,
+   "nameId": 0,
+   "name": "",
+   "room": 49,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 27991
+  },
+  {
+   "id": 1094,
+   "nameId": 0,
+   "name": "",
+   "room": 49,
+   "talkHeader": 0,
+   "talkScript": 32,
+   "actions": 27991
+  },
+  {
+   "id": 1095,
+   "nameId": 0,
+   "name": "",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1096,
+   "nameId": 0,
+   "name": "",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1097,
+   "nameId": 0,
+   "name": "",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1098,
+   "nameId": 0,
+   "name": "",
+   "room": 45,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1099,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1100,
+   "nameId": 0,
+   "name": "",
+   "room": 48,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1101,
+   "nameId": 0,
+   "name": "",
+   "room": 44,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1102,
+   "nameId": 0,
+   "name": "",
+   "room": 44,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1103,
+   "nameId": 0,
+   "name": "",
+   "room": 45,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1104,
+   "nameId": 0,
+   "name": "",
+   "room": 45,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1105,
+   "nameId": 0,
+   "name": "",
+   "room": 45,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1106,
+   "nameId": 0,
+   "name": "",
+   "room": 45,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1107,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1108,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1109,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1110,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1111,
+   "nameId": 0,
+   "name": "",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1112,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1113,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1114,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1115,
+   "nameId": 0,
+   "name": "",
+   "room": 46,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1116,
+   "nameId": 0,
+   "name": "",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1117,
+   "nameId": 0,
+   "name": "",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1118,
+   "nameId": 0,
+   "name": "",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1119,
+   "nameId": 0,
+   "name": "",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1120,
+   "nameId": 0,
+   "name": "",
+   "room": 44,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1121,
+   "nameId": 0,
+   "name": "",
+   "room": 28,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1122,
+   "nameId": 0,
+   "name": "",
+   "room": 28,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 1123,
+   "nameId": 3239,
+   "name": "Goat",
+   "room": 13,
+   "talkHeader": 0,
+   "talkScript": 778,
+   "actions": 27991
+  },
+  {
+   "id": 1124,
+   "nameId": 3241,
+   "name": "Well",
+   "room": 13,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 38116
+  },
+  {
+   "id": 1125,
+   "nameId": 0,
+   "name": "",
+   "room": 9,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1126,
+   "nameId": 0,
+   "name": "",
+   "room": 9,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1127,
+   "nameId": 0,
+   "name": "",
+   "room": 9,
+   "talkHeader": 0,
+   "talkScript": 8192,
+   "actions": 27991
+  },
+  {
+   "id": 1129,
+   "nameId": 0,
+   "name": "",
+   "room": 15,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 27991
+  },
+  {
+   "id": 1130,
+   "nameId": 0,
+   "name": "",
+   "room": 41,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 36528
+  },
+  {
+   "id": 1131,
+   "nameId": 0,
+   "name": "",
+   "room": 32767,
+   "talkHeader": 0,
+   "talkScript": 16829,
+   "actions": 27340
+  },
+  {
+   "id": 10000,
+   "nameId": 108,
+   "name": "Bottle",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 4818,
+   "actions": 33891
+  },
+  {
+   "id": 10001,
+   "nameId": 109,
+   "name": "Cell door",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 32784,
+   "actions": 34658
+  },
+  {
+   "id": 10002,
+   "nameId": 109,
+   "name": "Cell door",
+   "room": 2,
+   "talkHeader": 0,
+   "talkScript": 2250,
+   "actions": 34714
+  },
+  {
+   "id": 10003,
+   "nameId": 144,
+   "name": "Knife",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 27991
+  },
+  {
+   "id": 10004,
+   "nameId": 145,
+   "name": "Bricks",
+   "room": 2,
+   "talkHeader": 0,
+   "talkScript": 7,
+   "actions": 34776
+  },
+  {
+   "id": 10005,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 17,
+   "talkHeader": 0,
+   "talkScript": 3443,
+   "actions": 34832
+  },
+  {
+   "id": 10006,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 29,
+   "talkHeader": 0,
+   "talkScript": 6024,
+   "actions": 34832
+  },
+  {
+   "id": 10007,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 19,
+   "talkHeader": 0,
+   "talkScript": 4112,
+   "actions": 34970
+  },
+  {
+   "id": 10008,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 30,
+   "talkHeader": 0,
+   "talkScript": 3281,
+   "actions": 34832
+  },
+  {
+   "id": 10009,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 14,
+   "talkHeader": 0,
+   "talkScript": 32784,
+   "actions": 35074
+  },
+  {
+   "id": 10010,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 31,
+   "talkHeader": 0,
+   "talkScript": 32784,
+   "actions": 34832
+  },
+  {
+   "id": 10011,
+   "nameId": 329,
+   "name": "Lockpick",
+   "room": 258,
+   "talkHeader": 0,
+   "talkScript": 3569,
+   "actions": 27991
+  },
+  {
+   "id": 10012,
+   "nameId": 384,
+   "name": "Tinderbox",
+   "room": 28,
+   "talkHeader": 0,
+   "talkScript": 2503,
+   "actions": 27991
+  },
+  {
+   "id": 10013,
+   "nameId": 381,
+   "name": "Flask",
+   "room": 999,
+   "talkHeader": 0,
+   "talkScript": 25104,
+   "actions": 34563
+  },
+  {
+   "id": 10014,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 15,
+   "talkHeader": 0,
+   "talkScript": 37648,
+   "actions": 35475
+  },
+  {
+   "id": 10015,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 12,
+   "talkHeader": 0,
+   "talkScript": 14864,
+   "actions": 35130
+  },
+  {
+   "id": 10016,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 32,
+   "talkHeader": 0,
+   "talkScript": 32784,
+   "actions": 35130
+  },
+  {
+   "id": 10017,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 20,
+   "talkHeader": 0,
+   "talkScript": 14864,
+   "actions": 35231
+  },
+  {
+   "id": 10018,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 36,
+   "talkHeader": 0,
+   "talkScript": 32784,
+   "actions": 35130
+  },
+  {
+   "id": 10019,
+   "nameId": 2291,
+   "name": "Book",
+   "room": 258,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 33986
+  },
+  {
+   "id": 10020,
+   "nameId": 379,
+   "name": "Diary",
+   "room": 99,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 34385
+  },
+  {
+   "id": 10021,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 10,
+   "talkHeader": 0,
+   "talkScript": 14864,
+   "actions": 35332
+  },
+  {
+   "id": 10022,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 34,
+   "talkHeader": 0,
+   "talkScript": 4112,
+   "actions": 35130
+  },
+  {
+   "id": 10023,
+   "nameId": 336,
+   "name": "Statue",
+   "room": 256,
+   "talkHeader": 0,
+   "talkScript": 32814,
+   "actions": 27991
+  },
+  {
+   "id": 10024,
+   "nameId": 337,
+   "name": "Potion",
+   "room": 256,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 34474
+  },
+  {
+   "id": 10025,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 38,
+   "talkHeader": 0,
+   "talkScript": 32784,
+   "actions": 35475
+  },
+  {
+   "id": 10026,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 38,
+   "talkHeader": 0,
+   "talkScript": 63504,
+   "actions": 35576
+  },
+  {
+   "id": 10027,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 39,
+   "talkHeader": 0,
+   "talkScript": 63504,
+   "actions": 35576
+  },
+  {
+   "id": 10028,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 39,
+   "talkHeader": 0,
+   "talkScript": 63504,
+   "actions": 35576
+  },
+  {
+   "id": 10029,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 40,
+   "talkHeader": 0,
+   "talkScript": 63504,
+   "actions": 35576
+  },
+  {
+   "id": 10030,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 40,
+   "talkHeader": 0,
+   "talkScript": 63504,
+   "actions": 35576
+  },
+  {
+   "id": 10031,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 5,
+   "talkHeader": 0,
+   "talkScript": 18944,
+   "actions": 35576
+  },
+  {
+   "id": 10032,
+   "nameId": 349,
+   "name": "Metal Bar",
+   "room": 258,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 27991
+  },
+  {
+   "id": 10033,
+   "nameId": 2894,
+   "name": "Gem",
+   "room": 258,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 27991
+  },
+  {
+   "id": 10034,
+   "nameId": 2917,
+   "name": "Cowbane",
+   "room": 18,
+   "talkHeader": 0,
+   "talkScript": 22304,
+   "actions": 27991
+  },
+  {
+   "id": 10035,
+   "nameId": 2919,
+   "name": "Hassock",
+   "room": 14,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 27991
+  },
+  {
+   "id": 10036,
+   "nameId": 382,
+   "name": "Sprig",
+   "room": 258,
+   "talkHeader": 0,
+   "talkScript": 1043,
+   "actions": 27991
+  },
+  {
+   "id": 10037,
+   "nameId": 4094,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 34243
+  },
+  {
+   "id": 10038,
+   "nameId": 4095,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 22272,
+   "actions": 27991
+  },
+  {
+   "id": 10039,
+   "nameId": 363,
+   "name": "Eye of Gethryn",
+   "room": 443,
+   "talkHeader": 0,
+   "talkScript": 3582,
+   "actions": 27991
+  },
+  {
+   "id": 10040,
+   "nameId": 372,
+   "name": "Axe",
+   "room": 443,
+   "talkHeader": 0,
+   "talkScript": 90,
+   "actions": 27991
+  },
+  {
+   "id": 30000,
+   "nameId": 134,
+   "name": "Grille",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27820
+  },
+  {
+   "id": 30001,
+   "nameId": 234,
+   "name": "Tap",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 1664,
+   "actions": 27768
+  },
+  {
+   "id": 30002,
+   "nameId": 232,
+   "name": "Barrel",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27794
+  },
+  {
+   "id": 30003,
+   "nameId": 260,
+   "name": "Column",
+   "room": 2,
+   "talkHeader": 0,
+   "talkScript": 5,
+   "actions": 27726
+  },
+  {
+   "id": 30004,
+   "nameId": 262,
+   "name": "Weapons",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 63498,
+   "actions": 27744
+  },
+  {
+   "id": 30005,
+   "nameId": 282,
+   "name": "Leather cord",
+   "room": 4,
+   "talkHeader": 0,
+   "talkScript": 16384,
+   "actions": 27726
+  },
+  {
+   "id": 30006,
+   "nameId": 272,
+   "name": "Skulls",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 4609,
+   "actions": 27711
+  },
+  {
+   "id": 30007,
+   "nameId": 271,
+   "name": "Swords",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 2817,
+   "actions": 27696
+  },
+  {
+   "id": 30008,
+   "nameId": 292,
+   "name": "Straw pile",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 876,
+   "actions": 27671
+  },
+  {
+   "id": 30009,
+   "nameId": 273,
+   "name": "Table",
+   "room": 3,
+   "talkHeader": 0,
+   "talkScript": 1132,
+   "actions": 27991
+  },
+  {
+   "id": 30010,
+   "nameId": 289,
+   "name": "Stocks",
+   "room": 4,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27653
+  },
+  {
+   "id": 30011,
+   "nameId": 2028,
+   "name": "Anvil",
+   "room": 28,
+   "talkHeader": 0,
+   "talkScript": 256,
+   "actions": 27635
+  },
+  {
+   "id": 30012,
+   "nameId": 2099,
+   "name": "Lock",
+   "room": 19,
+   "talkHeader": 0,
+   "talkScript": 512,
+   "actions": 27617
+  },
+  {
+   "id": 30013,
+   "nameId": 234,
+   "name": "Tap",
+   "room": 30,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27598
+  },
+  {
+   "id": 30014,
+   "nameId": 2095,
+   "name": "Window",
+   "room": 10,
+   "talkHeader": 0,
+   "talkScript": 32779,
+   "actions": 27991
+  },
+  {
+   "id": 30015,
+   "nameId": 2095,
+   "name": "Window",
+   "room": 19,
+   "talkHeader": 0,
+   "talkScript": 19,
+   "actions": 27991
+  },
+  {
+   "id": 30016,
+   "nameId": 2161,
+   "name": "Statue",
+   "room": 9,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 30017,
+   "nameId": 2161,
+   "name": "Statue",
+   "room": 9,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 30018,
+   "nameId": 2175,
+   "name": "Sign",
+   "room": 14,
+   "talkHeader": 0,
+   "talkScript": 7787,
+   "actions": 27991
+  },
+  {
+   "id": 30019,
+   "nameId": 2175,
+   "name": "Sign",
+   "room": 17,
+   "talkHeader": 0,
+   "talkScript": 4973,
+   "actions": 27991
+  },
+  {
+   "id": 30020,
+   "nameId": 2179,
+   "name": "Notice",
+   "room": 17,
+   "talkHeader": 0,
+   "talkScript": 2669,
+   "actions": 27991
+  },
+  {
+   "id": 30021,
+   "nameId": 2161,
+   "name": "Statue",
+   "room": 20,
+   "talkHeader": 0,
+   "talkScript": 2413,
+   "actions": 27991
+  },
+  {
+   "id": 30022,
+   "nameId": 2179,
+   "name": "Notice",
+   "room": 28,
+   "talkHeader": 0,
+   "talkScript": 3693,
+   "actions": 27991
+  },
+  {
+   "id": 30023,
+   "nameId": 2179,
+   "name": "Notice",
+   "room": 29,
+   "talkHeader": 0,
+   "talkScript": 4461,
+   "actions": 27991
+  },
+  {
+   "id": 30024,
+   "nameId": 2096,
+   "name": "Sign",
+   "room": 12,
+   "talkHeader": 0,
+   "talkScript": 4461,
+   "actions": 27991
+  },
+  {
+   "id": 30025,
+   "nameId": 2096,
+   "name": "Sign",
+   "room": 10,
+   "talkHeader": 0,
+   "talkScript": 5229,
+   "actions": 27991
+  },
+  {
+   "id": 30026,
+   "nameId": 0,
+   "name": "",
+   "room": 34,
+   "talkHeader": 0,
+   "talkScript": 7277,
+   "actions": 27991
+  },
+  {
+   "id": 30028,
+   "nameId": 2095,
+   "name": "Window",
+   "room": 19,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27837
+  },
+  {
+   "id": 30029,
+   "nameId": 4064,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 27463,
+   "actions": 27422
+  },
+  {
+   "id": 30030,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27463
+  },
+  {
+   "id": 30031,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30032,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30033,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30034,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30035,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30036,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30037,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30038,
+   "nameId": 4065,
+   "name": "?",
+   "room": 42,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30039,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 4,
+   "talkHeader": 0,
+   "talkScript": 2817,
+   "actions": 27273
+  },
+  {
+   "id": 30040,
+   "nameId": 2983,
+   "name": "Stall",
+   "room": 19,
+   "talkHeader": 0,
+   "talkScript": 618,
+   "actions": 27991
+  },
+  {
+   "id": 30041,
+   "nameId": 2983,
+   "name": "Stall",
+   "room": 19,
+   "talkHeader": 0,
+   "talkScript": 618,
+   "actions": 27991
+  },
+  {
+   "id": 30042,
+   "nameId": 2984,
+   "name": "Shelves",
+   "room": 35,
+   "talkHeader": 0,
+   "talkScript": 16,
+   "actions": 27991
+  },
+  {
+   "id": 30043,
+   "nameId": 2984,
+   "name": "Shelves",
+   "room": 35,
+   "talkHeader": 0,
+   "talkScript": 16,
+   "actions": 27991
+  },
+  {
+   "id": 30044,
+   "nameId": 2179,
+   "name": "Notice",
+   "room": 12,
+   "talkHeader": 0,
+   "talkScript": 255,
+   "actions": 27991
+  },
+  {
+   "id": 30045,
+   "nameId": 2013,
+   "name": "Door",
+   "room": 12,
+   "talkHeader": 0,
+   "talkScript": 4973,
+   "actions": 27273
+  },
+  {
+   "id": 30046,
+   "nameId": 133,
+   "name": "Crack",
+   "room": 1,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27258
+  },
+  {
+   "id": 30047,
+   "nameId": 3156,
+   "name": "Apparatus",
+   "room": 30,
+   "talkHeader": 0,
+   "talkScript": 35072,
+   "actions": 27240
+  },
+  {
+   "id": 30048,
+   "nameId": 3160,
+   "name": "Gates",
+   "room": 9,
+   "talkHeader": 0,
+   "talkScript": 4097,
+   "actions": 27991
+  },
+  {
+   "id": 30049,
+   "nameId": 238,
+   "name": "Sack",
+   "room": 34,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 30050,
+   "nameId": 3197,
+   "name": "Plant",
+   "room": 34,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 30051,
+   "nameId": 3198,
+   "name": "Box",
+   "room": 34,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 30052,
+   "nameId": 3199,
+   "name": "Slate",
+   "room": 34,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 30053,
+   "nameId": 3200,
+   "name": "Jars",
+   "room": 34,
+   "talkHeader": 0,
+   "talkScript": 1,
+   "actions": 27991
+  },
+  {
+   "id": 30054,
+   "nameId": 4092,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27215
+  },
+  {
+   "id": 30055,
+   "nameId": 4098,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 2,
+   "actions": 27991
+  },
+  {
+   "id": 30056,
+   "nameId": 4100,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30057,
+   "nameId": 144,
+   "name": "Knife",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30058,
+   "nameId": 4103,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30059,
+   "nameId": 4105,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30060,
+   "nameId": 4107,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30061,
+   "nameId": 4109,
+   "name": "?",
+   "room": 43,
+   "talkHeader": 0,
+   "talkScript": 0,
+   "actions": 27991
+  },
+  {
+   "id": 30062,
+   "nameId": 4121,
+   "name": "?",
+   "room": 45,
+   "talkHeader": 0,
+   "talkScript": 11117,
+   "actions": 27991
+  },
+  {
+   "id": 30063,
+   "nameId": 2291,
+   "name": "Book",
+   "room": 36,
+   "talkHeader": 0,
+   "talkScript": 11114,
+   "actions": 27991
+  }
+ ],
  "counts": [
   402,
   1276,

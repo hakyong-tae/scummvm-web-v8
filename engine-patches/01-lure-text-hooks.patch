@@ -1,3 +1,23 @@
+diff --git a/engines/lure/game.cpp b/engines/lure/game.cpp
+index cb85286e..ae85f891 100644
+--- a/engines/lure/game.cpp
++++ b/engines/lure/game.cpp
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include "lure/game.h"
++#include "lure/webtext.h"
+ #include "lure/animseq.h"
+ #include "lure/fights.h"
+ #include "lure/lure.h"
+@@ -170,6 +171,7 @@ void Game::execute() {
+ 
+ 		// Main game loop
+ 		while (!engine.shouldQuit() && ((_state & GS_RESTART) == 0)) {
++			WebText::debugFrame();
+ 			// If time for next frame, allow everything to update
+ 			if (system.getMillis() > timerVal + GAME_FRAME_DELAY) {
+ 				timerVal = system.getMillis();
 diff --git a/engines/lure/module.mk b/engines/lure/module.mk
 index 7aae9073..7d56d380 100644
 --- a/engines/lure/module.mk
@@ -235,10 +255,10 @@ index 8b664cbd..b9938ec2 100644
  
 diff --git a/engines/lure/webtext.cpp b/engines/lure/webtext.cpp
 new file mode 100644
-index 00000000..6d8477c4
+index 00000000..0b556172
 --- /dev/null
 +++ b/engines/lure/webtext.cpp
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,254 @@
 +/* scummvm-web-v8: see webtext.h. GPLv3, same as ScummVM. */
 +// emscripten.h uses libc symbols that ScummVM poisons via common/forbidden.h (same workaround as backends/platform/sdl/emscripten)
 +#define FORBIDDEN_SYMBOL_ALLOW_ALL
@@ -249,6 +269,8 @@ index 00000000..6d8477c4
 +#include "lure/strings.h"
 +#include "lure/res.h"
 +#include "lure/res_struct.h"
++#include "lure/room.h"
++#include "lure/hotspots.h"
 +#include "common/array.h"
 +#include "common/util.h"
 +
@@ -414,8 +436,39 @@ index 00000000..6d8477c4
 +		}
 +		json += ']';
 +	}
++	// hotspots: id / nameId / room / talk header 존재 / talkScriptOffset — "어느 NPC가 대화 가능한가" 분석용
++	json += "],\"hotspots\":[";
++	{
++		Resources &res = Resources::getReference();
++		HotspotDataList &hl = res.hotspotData();
++		bool first = true;
++		for (HotspotDataList::iterator it = hl.begin(); it != hl.end(); ++it) {
++			HotspotData &h = **it;
++			if (!first) json += ','; first = false;
++			buf[0] = '\0';
++			sd.getString(h.nameId & 0x1fff, buf);
++			json += Common::String::format("{\"id\":%d,\"nameId\":%d,\"name\":", h.hotspotId, h.nameId & 0x1fff);
++			appendJsonString(json, Common::String(buf));
++			json += Common::String::format(",\"room\":%d,\"talkHeader\":%d,\"talkScript\":%d,\"actions\":%d}", h.roomNumber, res.getTalkHeader(h.hotspotId) ? 1 : 0, h.talkScriptOffset, h.actionsOffset);
++		}
++	}
 +	json += "]}";
 +	EM_ASM({ if (Module['onLureDump']) Module['onLureDump'](UTF8ToString($0)); }, json.c_str());
++}
++
++// 디버그 전용(Module.lureDebug): 페이지가 Module.lureEnterRoom=N 을 넣으면 Debugger::cmd_enterRoom 과 같은 방 이동
++void debugFrame() {
++	int roomNumber = EM_ASM_INT({ return (Module['lureDebug'] && Module['lureEnterRoom'] > 0) ? (Module['lureEnterRoom'] | 0) : 0; });
++	if (roomNumber <= 0)
++		return;
++	EM_ASM({ Module['lureEnterRoom'] = 0; });
++	Resources &res = Resources::getReference();
++	if (res.getRoom(roomNumber) == nullptr)
++		return;
++	Room &room = Room::getReference();
++	room.leaveRoom();
++	room.setRoomNumber(roomNumber);
++	res.getActiveHotspot(PLAYER_ID)->setRoomNumber(roomNumber);
 +}
 +
 +void present(Surface *surface, int l, int t, int r, int b, int sx, int sy) {
@@ -454,6 +507,7 @@ index 00000000..6d8477c4
 +void present(Surface *, int, int, int, int, int, int) {}
 +void forget(Surface *) {}
 +void notifyString(int, uint16, const char *, const char *, const char *) {}
++void debugFrame() {}
 +
 +#endif
 +
@@ -461,10 +515,10 @@ index 00000000..6d8477c4
 +} // namespace Lure
 diff --git a/engines/lure/webtext.h b/engines/lure/webtext.h
 new file mode 100644
-index 00000000..79f67122
+index 00000000..dec43f53
 --- /dev/null
 +++ b/engines/lure/webtext.h
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,30 @@
 +/* scummvm-web-v8: text records for the DOM subtitle layer (Emscripten only; no-ops elsewhere) */
 +#ifndef LURE_WEBTEXT_H
 +#define LURE_WEBTEXT_H
@@ -488,6 +542,8 @@ index 00000000..79f67122
 +void forget(Surface *owner);
 +// StringData::getString decoded `text` for `stringId` (Latin-1).
 +void notifyString(int table, uint16 localId, const char *text, const char *hotspotName, const char *characterName);
++// Called once per game-loop iteration (Game::execute) — debug-only page hooks (room teleport) run here, like the debugger would.
++void debugFrame();
 +
 +} // namespace WebText
 +} // namespace Lure

@@ -22,7 +22,7 @@ await page.evaluate(() => { window.Module.lureDumpRequest = 1 })
 await page.mouse.move(gx(150), gy(120)); await sleep(500); await page.mouse.move(gx(170), gy(130)); await sleep(500)
 await page.waitForFunction(() => window.__dump !== null, { timeout: 30000 })
 const dump = JSON.parse(await page.evaluate(() => window.__dump))
-const out = { list: dump.list, tables: dump.tables, counts: dump.tables.map(t => t.length), listCount: dump.list.length }
+const out = { list: dump.list, tables: dump.tables, hotspots: dump.hotspots || [], counts: dump.tables.map(t => t.length), listCount: dump.list.length }
 writeFileSync(new URL('../games/lure/strings.en.json', import.meta.url), JSON.stringify(out, null, 1))
 const empty = dump.tables.map(t => t.filter(s => !s).length)
 console.log('list', out.listCount, 'tables', out.counts, 'total', out.counts.reduce((a, b) => a + b, 0), 'empty', empty)
