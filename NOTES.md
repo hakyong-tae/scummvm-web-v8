@@ -63,6 +63,15 @@
 - 답안: `docs/ONESTORE-FORM.md`. 검수기(`hakyong-tae/anything` v8-checker `check.py`)를 `deploy/`에 로컬 적용해 **통과(FAIL 0)** 확인 — 검수기는 `showInterstitial(`/`showRewarded(` 호출부를 전부 SDK 호출로 보므로 래퍼 이름은 `playInterstitialAd/playRewardedAd`.
 - 힌트 콘텐츠 `games/lure/hints.json`(ko/en 8구간)은 우리가 쓴 공략 노트 — 원작 데이터 아님, 라이선스 3조와 무관. 합성 KeyboardEvent는 canvas dispatch로 SDL3에 전달됨(실측).
 
+## 입력 보조 (26-09-08~09)
+- **엔진 UI 상태 플래그**(패치 01 `emitState`): `Module.lureTalkSelect`(대화 선택지 목록 떠 있음) / `lurePopup`(동작 팝업, `PopupMenu::Show`에 RAII `PopupScope`) / `lureModal`(세이브·복원 창처럼 **엔진이 키보드를 직접 읽는 중**, `SaveRestoreDialog::show`에 `ModalScope`). 셸의 키보드·터치 보조는 이 플래그로만 켜진다 — 좌표 휴리스틱으로 판단하면 세이브 이름 입력 중 Enter를 가로채 저장이 깨진다.
+- **터치**: 대화 선택지를 캔버스 위 금색 버튼으로 얹고(`#choices`), 탭하면 그 줄 좌표로 합성 클릭. 첫 회 "할 말을 골라 탭하세요" 토스트.
+- **PC 키보드**: 선택지는 ↑↓로 합성 pointermove(엔진이 마우스 y로 선택), 팝업은 ↑↓를 합성 wheel로, 둘 다 Enter = 합성 좌클릭. 인덱스 계산은 `nextChoiceIndex`(순수 함수, 테스트).
+- 검증: 팝업은 실게임에서 ↓→Enter로 "잠금 해제" 실행 확인. 선택지는 `Module.onLureText`에 TALK_SELECT 프레임을 주입해 pointermove/down/up 좌표가 각 줄에 정확히 꽂히는지 확인(스콜 경비가 순찰 스케줄이라 실게임 재현이 불안정). **미검증**: `lureModal`이 실제 세이브 창에서 1로 바뀌는지(헤드리스에서 Ctrl+S·메뉴바 진입 실패). 구조는 팝업과 동일한 RAII라 동작할 것으로 보나 실기기 확인 필요.
+
+## 지시(Tell) 문장 합성
+`Tell Ratpouch to Push Bricks and then Get Bottle and then finish`처럼 **이름 자리에 하위 액션 문장**이 오는 경우가 있다. 합성기는 `{2}`를 이름 사전으로만 바꿨기 때문에 "Push Bricks"가 영어로 남았다(사용자 리포트). 이제 `koPhrase()`가 ① 이름 사전 → ② "and then"으로 쪼개 각 조각을 `compose()` 재귀 → ③ 고정 단어 사전(list idx≥25, 플레이스홀더 없는 항목: and then/finish/nothing 등) 순으로 처리한다. 실제 데이터 회귀 테스트는 `tests/real-data.test.ts`(축소 픽스처가 놓치는 인덱스 어긋남을 잡는다).
+
 ## 검증 결과 (2026-09-06)
 - M1: Chrome(가시 탭)에서 rAF 120/s, longtask 0 → Asyncify 성능 문제 없음. 타이틀/인트로/첫 방 정상.
 - M2: 상태줄·동사 팝업·2줄 설명 대화창이 DOM span으로 좌표 일치 렌더(`shots/m2-*.png`). 콜백 예외 0.
