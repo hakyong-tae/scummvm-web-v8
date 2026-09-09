@@ -35,6 +35,7 @@ const prefs = {
   set touch(v: 'trackpad' | 'direct') { localStorage.setItem(prefKey('touch'), v) },
 }
 document.title = GAME_TITLE
+console.log('[shell] game =', GAME.id)   // 배포본이 어느 게임으로 떴는지 콘솔에서 바로 확인
 $('title').textContent = GAME.name
 
 // ── 캔버스 맞춤: contain(소수 배율) — 폰 가로에서 정수배는 화면을 절반도 못 채움 ──
@@ -46,7 +47,7 @@ function fitCanvas() {
 addEventListener('resize', fitCanvas); fitCanvas()
 // 홍보 녹화 모드: 제목 오버레이, HUD 숨김
 const promo = params.get('promo') === '1'
-if (promo) { $('promo').classList.add('on') }
+if (promo) { $('promo').classList.add('on'); $('promoTitle').textContent = GAME.name; $('promoSub').textContent = gameText(prefs.lang).subtitle }
 
 // ── 터치(트랙패드) ─────────────────────────────────────────────────────────────
 const coarse = matchMedia('(pointer: coarse)').matches || params.get('touch') === '1'

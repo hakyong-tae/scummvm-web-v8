@@ -321,3 +321,27 @@ ini에는 `[scummvm]` 전역 설정만 남는다 → **IDBFS에 캐시된 낡은
 - `prepare-deploy.sh` 는 `rm -rf deploy/<game>` 부터 한다 → **`npm install && npm run build` 는 prepare 다음에** 해야 한다.
   순서를 바꾸면 방금 만든 `dist/`가 지워진다(한 번 당함).
 - `serve-subpath.mjs` 기본 포트를 3047 → **3057**로 옮겼다. 3047은 이 머신의 다른 프로젝트(scar-flame)가 쓴다.
+
+
+---
+
+## 12. 배포 사고와 수정 (2026-09-09) — Soltys 배포본이 Lure로 떴다
+
+**증상**: V8에 올린 Soltys 프로젝트의 첫 화면이 `Lure of the Temptress` 타이틀·부제로 떴다.
+
+**원인**: 배포본의 게임 지정을 `.env.production`(`VITE_GAME=soltys`) 하나에만 맡겼다.
+파일은 정상 커밋돼 있었지만(클론해서 `git ls-files`로 확인), **V8 빌더가 production 모드로 돌지 않으면 Vite가 이 파일을 읽지 않는다.**
+그러면 `GAME`이 기본값 `lure`로 떨어지고, index.html의 정적 문구까지 Lure로 하드코딩돼 있어 완전히 Lure 화면이 된다.
+
+**수정**
+- `index.html`에 **`<meta name="svm-game" content="…">`** 를 두고 `prepare-deploy.sh`가 게임별로 박는다.
+  `config.ts`의 해석 순서: `?game=` → **meta** → `VITE_GAME` → `lure`. `.env.production`은 보조로 남긴다.
+- index.html의 정적 문구에서 게임 이름을 뺐다(`#title`·`#subtitle`·promo는 비우고 JS가 채운다).
+  하드코딩돼 있으면 선택이 어긋났을 때 다른 게임 제목이 그대로 보여 원인을 가린다.
+- 부팅 시 `console.log('[shell] game =', GAME.id)` — 배포본이 어느 게임으로 떴는지 콘솔에서 즉시 확인.
+
+**검증**: `deploy/soltys`에서 `.env.production`을 **지우고** 빌드해도 `[shell] game = soltys`, 제목 `Sołtys (한글판)`,
+조작 안내까지 Soltys 것으로 나온다. 하위경로 한글 스모크도 통과.
+
+**교훈**: 플랫폼 빌드의 모드·환경변수 적용 여부는 신뢰하지 말 것. 배포본이 자기 정체를 아는 방법은
+**빌드 산출물 안에 들어가는 것**(HTML meta)이어야 한다. 그리고 정적 폴백 문구는 틀린 정보를 담지 말아야 한다.

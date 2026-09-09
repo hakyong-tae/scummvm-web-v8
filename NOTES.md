@@ -112,6 +112,12 @@ Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§11.
 - **캔버스 픽셀을 JS(`drawImage`/`getImageData`)로 읽으면 검은 화면이 나온다** — WebGL 드로잉 버퍼가 프레임 밖에서 비어 있다.
   간헐적으로 맞는 값이 섞여 나와 더 헷갈린다. 화면 검증은 스크린샷을 찍어 디코드할 것(`tools/lib/png.mjs`).
 - **`scummvm.ini`는 IDBFS에 한 번 저장되면 다시 fetch 하지 않는다** — 그래서 게임은 ini 섹션이 아니라 `--path=` 인자로 띄운다(26-09-09).
+- **배포본이 어느 게임인지는 `<meta name="svm-game">`로 정한다.** `.env.production`(`VITE_GAME`)만 믿으면 안 된다 —
+  V8 빌더가 production 모드로 돌지 않으면 적용되지 않아 **기본값(lure)으로 떨어진다**(26-09-09 실제로 Soltys 배포본이 Lure 타이틀로 떴다).
+  `prepare-deploy.sh`가 meta를 게임별로 박고, `config.ts`는 `?game=` → meta → `VITE_GAME` → `lure` 순으로 읽는다.
+  부팅 시 콘솔에 `[shell] game = <id>` 를 찍으므로 배포본이 어느 게임으로 떴는지 바로 확인된다.
+- index.html의 정적 문구에는 **게임 이름을 넣지 않는다**(`#title`·`#subtitle`·promo는 비워 두고 JS가 채운다).
+  하드코딩해 두면 게임 선택이 어긋났을 때 다른 게임 제목이 그대로 보인다.
 - **브라우저 탭이 hidden이면 엔진이 1틱/초로 스로틀**(Asyncify sleep = setTimeout). 프리뷰 패널이 접혀 있거나 Chrome 창이 가려지면 멈춘 듯 보임.
   검증은 `tools/smoke.mjs`(헤드리스, `--disable-background-timer-throttling`)로.
 - build.sh는 시작 시 `git checkout -- . && git clean -fd engines backends dists`로 소스를 리셋 → 패치는 **먼저 .patch로 뽑고** 빌드.

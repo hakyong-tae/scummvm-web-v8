@@ -35,8 +35,17 @@ cp "$ROOT/public/fonts/"* "$OUT/public/fonts/"
 cp "$ROOT/games/$GAME/"*.json "$OUT/public/games/$GAME/"
 cp "$ROOT/games/$GAME/"*.json "$OUT/games/$GAME/"        # i18n-check 등 도구용 원본 위치
 
-# 이 배포본이 어떤 게임인지 고정(?game= 없이 열어도 맞는 게임이 뜨도록)
-printf 'VITE_GAME=%s\n' "$GAME" > "$OUT/.env.production"
+# 이 배포본이 어떤 게임인지 고정(?game= 없이 열어도 맞는 게임이 뜨도록).
+# meta 태그가 주(主)다 — V8 빌더가 production 모드로 돌지 않으면 .env.production 은 적용되지 않는다(26-09-09 실측).
+python3 - "$OUT/index.html" "$GAME" <<'PYMETA'
+import sys, io, re
+p, game = sys.argv[1], sys.argv[2]
+s = io.open(p, encoding='utf-8').read()
+s2, n = re.subn(r'<meta name="svm-game" content="[^"]*">', '<meta name="svm-game" content="%s">' % game, s, count=1)
+assert n == 1, 'index.html 에 <meta name="svm-game"> 이 없다'   # 같은 값으로 바꿔도(s2==s) 통과해야 한다
+io.open(p, 'w', encoding='utf-8').write(s2)
+PYMETA
+printf 'VITE_GAME=%s\n' "$GAME" > "$OUT/.env.production"   # 보조(빌드가 production 모드일 때만 먹는다)
 
 # 클라우드 세이브 컬렉션을 게임별로 — 게임마다 V8 프로젝트(DB)가 따로지만 이름이 섞이면 헷갈린다.
 # ⚠️ 이미 배포된 게임의 이름을 바꾸면 기존 클라우드 세이브가 끊긴다(lure 는 lure_saves 유지).

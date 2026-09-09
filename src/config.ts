@@ -82,8 +82,13 @@ export const GAMES: Record<string, GameDef> = {
   },
 }
 
-/** 현재 게임: ?game=<id> (없으면 빌드 기본값 VITE_GAME, 그것도 없으면 lure) */
+/** 현재 게임: ?game=<id> → <meta name="svm-game"> → VITE_GAME → lure.
+ *  meta 를 먼저 보는 이유: 배포 플랫폼의 빌드가 production 모드가 아니면 .env.production 이 적용되지 않는다(실제로 겪음). */
+const metaGame = typeof document !== 'undefined'
+  ? document.querySelector('meta[name="svm-game"]')?.getAttribute('content') ?? undefined
+  : undefined
 const requested = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('game'))
+  || metaGame
   || (import.meta.env?.VITE_GAME as string | undefined)
 export const GAME: GameDef = GAMES[requested ?? ''] ?? GAMES.lure
 
