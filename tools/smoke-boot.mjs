@@ -13,6 +13,7 @@ const puppeteer = require('puppeteer')
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? a.slice(n.length + 3) : d }
 const game = arg('game', 'lure')
 const secs = Number(arg('secs', '25'))
+const lang = arg('lang', 'en')
 const steps = arg('steps', '') ? arg('steps', '').split(';').filter(Boolean) : []
 const base = process.argv.filter(a => !a.startsWith('--'))[2] || 'http://localhost:3046/'
 const outDir = new URL('../docs/superpowers/plans/shots/', import.meta.url).pathname
@@ -29,7 +30,7 @@ await page.setViewport({ width: 1400, height: 900 })
 const logs = [], errors = []
 page.on('console', m => logs.push(m.text()))
 page.on('pageerror', e => { errors.push(e.message); logs.push('PAGEERROR ' + e.message) })
-await page.goto(`${base}?game=${game}&lang=en`, { waitUntil: 'load' })
+await page.goto(`${base}?game=${game}&lang=${lang}`, { waitUntil: 'load' })
 await page.click('#startBtn')
 
 const t0 = Date.now()

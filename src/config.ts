@@ -14,6 +14,10 @@ export interface GameDef {
   saveCollection: string
   /** 고지 화면에 전문을 싣는 원본 파일들(배포본 engine/data/games/<id>/ 안) */
   licenseFiles: string[]
+  /** 번역 사전 형태: 'lure' = 테이블:로컬 키 + 조사 합성, 'ref' = SAY ref 키(CGE 계열) */
+  i18n: 'lure' | 'ref'
+  /** 한 문단으로 묶을 줄 간격(px) — Lure 대화창 7, CGE 10 */
+  linePitch: { minPitch: number; maxPitch: number }
 }
 
 export const GAMES: Record<string, GameDef> = {
@@ -25,6 +29,8 @@ export const GAMES: Record<string, GameDef> = {
     adStart: 'lure-start', adQuit: 'lure-quit', adHints: 'lure-hints',
     saveCollection: 'lure_saves',
     licenseFiles: ['LICENSE.txt', 'README'],
+    i18n: 'lure',
+    linePitch: { minPitch: 7, maxPitch: 9 },
   },
   soltys: {
     id: 'soltys',
@@ -34,6 +40,8 @@ export const GAMES: Record<string, GameDef> = {
     adStart: 'soltys-start', adQuit: 'soltys-quit', adHints: 'soltys-hints',
     saveCollection: 'soltys_saves',
     licenseFiles: ['license.txt'],
+    i18n: 'ref',
+    linePitch: { minPitch: 9, maxPitch: 11 },
   },
 }
 

@@ -1,7 +1,7 @@
 import type { LureTextRecord } from '../engine/types'
 import { toCss } from './layout'
 import { diffRecords, recordKey } from './diff'
-import { groupBlocks, type TextBlock } from './blocks'
+import { groupBlocks, DEFAULT_PITCH, type PitchRange, type TextBlock } from './blocks'
 import { layoutKorean, type Measure } from './kolayout'
 
 export type Translate = (rec: LureTextRecord) => string
@@ -17,12 +17,15 @@ export class TextLayer {
   private current: LureTextRecord[] = []
   private translateBlock: TranslateBlock | null = null
   private measureCtx: CanvasRenderingContext2D | null = null
+  private pitch: PitchRange = DEFAULT_PITCH
 
   constructor(private root: HTMLElement, private canvas: HTMLCanvasElement, private translate: Translate = r => r.t) {
     addEventListener('resize', () => this.relayout())
   }
 
   setEnabled(on: boolean) { this.root.hidden = !on }
+  /** 줄 간격 범위(게임별) — 이 안에서 이어지는 레코드만 한 문단으로 묶는다 */
+  setPitch(p: PitchRange) { this.pitch = p; this.renderBlocks() }
   setTranslateBlock(fn: TranslateBlock | null) { this.translateBlock = fn; this.rerenderAll() }
 
   /** 엔진이 보고한 이번 프레임의 화면 텍스트 전체 */
@@ -42,7 +45,7 @@ export class TextLayer {
   }
 
   private renderBlocks() {
-    const blocks = groupBlocks(this.current)
+    const blocks = groupBlocks(this.current, this.pitch)
     const live = new Set<string>()
     for (const b of blocks) {
       const tr = this.translateBlock?.(b.records.map(r => r.t), b) ?? null

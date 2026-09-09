@@ -1,8 +1,8 @@
 # scummvm-web-v8 — ScummVM 웹판(한글 자막) 구조 노트
 
-**이 레포는 게임 1개가 아니라 "ScummVM 셸 = 재사용 코어"다.** 현재 `lure`(완료) / `soltys`(S1·S2 완료, 진행 중).
+**이 레포는 게임 1개가 아니라 "ScummVM 셸 = 재사용 코어"다.** 현재 `lure`(완료) / `soltys`(S1~S3 완료 = 한글 100%, 진행 중).
 게임 선택은 `?game=<id>` → `VITE_GAME` → 기본 `lure`. 게임별 정의는 `src/config.ts`의 `GAMES` 레지스트리.
-Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7·§8.
+Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§9.
 
 ## 개요 (Lure)
 - 게임: Lure of the Temptress (1992, Revolution Software) — 프리웨어. 라이선스 `games/lure/data/lure/LICENSE.txt` 6조
@@ -23,7 +23,8 @@ Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7·§8.
     node tools/smoke.mjs [--lang=ko]   # Lure 전용 헤드리스 스모크(부팅→인트로 스킵→동사 팝업→대화창→닫기, 스크린샷 docs/superpowers/plans/shots/)
     npm run smoke:boot -- --game=soltys --keys=Escape,Escape --clicks=250,150   # 게임 무관 부팅 스모크
     npm run strings:dump [-- --game=soltys]   # 엔진 훅으로 문자열 전수 덤프 → games/<game>/strings.en.json
-    npm run i18n:check        # ko.json 검수(커버리지·플레이스홀더·조사·용어집·길이)
+    npm run i18n:check [-- --game=soltys]     # ko.json 검수(커버리지·플레이스홀더·조사·용어집·길이)
+    npm run names:dump        # (CGE) vol.dat에서 스프라이트 이름 전수 추출 — 상태줄 라벨은 SAY 파일 밖에 있다
 
 ## 파일 구조 / 데이터 흐름
 - `public/engine -> engine/scummvm/build-emscripten` : scummvm.js/wasm + data/(lure.dat, 테마, games/lure/)
@@ -53,7 +54,9 @@ Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7·§8.
 | 사라짐 판정 | 글자색 픽셀 4개 미만이면 제거 | 불필요 — 프레임마다 목록을 새로 만든다 |
 | 번역 키 | `"<table>:<local>"` (방 번호에 따라 테이블이 겹침) | **ref 정수 하나** (`Text::getText(ref)`) |
 | 상태줄 | "동사 + 이름" 연결 → `StatusComposer` 합성 필요 | 스프라이트 이름 하나 → 합성 불필요 |
-| 문자열 수 | 1,804 | 327 (+ 스프라이트 이름은 SAY 밖) |
+| 문자열 수 | 1,804 | 327 (+ 스프라이트 이름 261개는 SAY 밖 → `tools/dump-cge-names.py`) |
+| 사전 | `i18n/dict.ts` KoDict + StatusComposer | `i18n/dictRef.ts` RefDict (영문→한글 맵 하나) |
+| 줄 간격 | 7px | **10px** — `blocks.ts` 기본값(7~9)으로는 문단이 안 묶인다(`GameDef.linePitch`) |
 
 ## M3 한글 파이프라인
 - **키 체계**: 문자열 ID 공간이 방 번호에 따라 테이블 1/2를 겹쳐 쓰므로(`StringData::resolveTable`: 방≥0x2A면 0x7d0~0xfa0가, <0x2A면 ≥0xfa0가 0x76으로 대체) 번역 키는 `"<table>:<local>"`. `games/lure/ko.json` = `{list:{액션idx:템플릿}, t:{키:템플릿}}`.

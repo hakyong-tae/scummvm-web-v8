@@ -16,6 +16,7 @@
     "data:stage": "bash tools/stage-data.sh",
     "i18n:check": "node tools/i18n-check.mjs",
     "strings:dump": "node tools/dump-strings.mjs",
+    "names:dump": "python3 tools/dump-cge-names.py",
     "smoke": "node tools/smoke.mjs",
     "smoke:boot": "node tools/smoke-boot.mjs"
   },

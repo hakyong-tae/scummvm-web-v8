@@ -1,6 +1,7 @@
 import { bootEngine } from './engine/loader'
 import { TextLayer } from './text/layer'
 import { KoDict, type EnDump, type KoData } from './i18n/dict'
+import { RefDict, type RefEnDump, type RefKoData } from './i18n/dictRef'
 import { StatusComposer } from './i18n/status'
 import { resolveBlock } from './i18n/resolve'
 import { assetUrl, GAME, GAME_TITLE, AD_PLACEMENT_START, AD_PLACEMENT_QUIT } from './config'
@@ -142,15 +143,26 @@ const layer = new TextLayer($('textlayer'), canvas)
 layer.setEnabled(params.get('layer') !== '0')
 let dict: KoDict | null = null
 let statusComposer: StatusComposer | null = null
+layer.setPitch(GAME.linePitch)
 async function loadKorean() {
   if (prefs.lang !== 'ko') { layer.setTranslateBlock(null); return }
   try {
     const [en, ko] = await Promise.all([
-      fetch(assetUrl('games/lure/strings.en.json')).then(r => r.json()) as Promise<EnDump>,
-      fetch(assetUrl('games/lure/ko.json')).then(r => r.json()) as Promise<KoData>,
+      fetch(assetUrl(`games/${GAME.id}/strings.en.json`)).then(r => r.json()),
+      fetch(assetUrl(`games/${GAME.id}/ko.json`)).then(r => r.json()),
     ])
-    dict = new KoDict(en, ko)
-    statusComposer = new StatusComposer(dict, en, ko, { for: 35, to: 36, on: 37 })  // res_struct.h StringEnum
+    if (GAME.i18n === 'ref') {
+      // CGE 계열: SAY ref 사전 하나로 끝난다(조사 합성·이름 치환 없음)
+      const rd = new RefDict(en as RefEnDump, ko as RefKoData)
+      const cov = rd.coverage()
+      console.log(`[i18n] ${GAME.id} 번역 ${cov.translated}/${cov.total}`)
+      layer.setTranslateBlock((lines) => resolveBlock(lines, {
+        lookup: (s) => rd.lookup(s), compose: () => null, prefix: (s) => rd.lookupPrefix(s),
+      }))
+      return
+    }
+    dict = new KoDict(en as EnDump, ko as KoData)
+    statusComposer = new StatusComposer(dict, en as EnDump, ko as KoData, { for: 35, to: 36, on: 37 })  // res_struct.h StringEnum
     layer.setTranslateBlock((lines) => resolveBlock(lines, {
       lookup: (s) => dict!.lookup(s), compose: (s) => statusComposer!.compose(s),
       prefix: (s) => dict!.lookupPrefix(s), menuItem: (s) => statusComposer!.compose(s, true),
