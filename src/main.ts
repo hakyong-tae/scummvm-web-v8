@@ -3,7 +3,7 @@ import { TextLayer } from './text/layer'
 import { KoDict, type EnDump, type KoData } from './i18n/dict'
 import { StatusComposer } from './i18n/status'
 import { resolveBlock } from './i18n/resolve'
-import { assetUrl, GAME_TITLE, AD_PLACEMENT_START, AD_PLACEMENT_QUIT } from './config'
+import { assetUrl, GAME, GAME_TITLE, AD_PLACEMENT_START, AD_PLACEMENT_QUIT } from './config'
 import { TrackpadFSM, attachTrackpad, clickAtCss } from './input/trackpad'
 import { playInterstitialAd } from './verse8/ads'
 import { SaveSyncController } from './save/syncController'
@@ -34,7 +34,7 @@ const prefs = {
   set touch(v: 'trackpad' | 'direct') { localStorage.setItem('lure.touch', v) },
 }
 document.title = GAME_TITLE
-$('title').textContent = 'Lure of the Temptress'
+$('title').textContent = GAME.name
 
 // ── 캔버스 맞춤: contain(소수 배율) — 폰 가로에서 정수배는 화면을 절반도 못 채움 ──
 function fitCanvas() {
@@ -217,7 +217,7 @@ startBtn.onclick = async () => {
   await loadKorean()
   startBtn.textContent = ui(prefs.lang).loadingEngine
   await bootEngine({
-    canvas, engineBase: assetUrl('engine/'), args: ['lure'],
+    canvas, engineBase: assetUrl('engine/'), args: [GAME.id],
     callbacks: {
       onStatus: (t) => { statusEl.textContent = t },
       onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); if (params.get('debug') === '1') (window.Module as Record<string, unknown>).lureDebug = true; setTimeout(() => void sync.start(), 3000); if (!promo) setTimeout(showControlsToast, 2500) },

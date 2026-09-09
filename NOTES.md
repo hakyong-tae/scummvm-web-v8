@@ -1,6 +1,10 @@
-# scummvm-web-v8 — Lure of the Temptress 웹판 구조 노트
+# scummvm-web-v8 — ScummVM 웹판(한글 자막) 구조 노트
 
-## 개요
+**이 레포는 게임 1개가 아니라 "ScummVM 셸 = 재사용 코어"다.** 현재 `lure`(완료) / `soltys`(S1 완료, 진행 중).
+게임 선택은 `?game=<id>` → `VITE_GAME` → 기본 `lure`. 게임별 정의는 `src/config.ts`의 `GAMES` 레지스트리.
+Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7.
+
+## 개요 (Lure)
 - 게임: Lure of the Temptress (1992, Revolution Software) — 프리웨어. 라이선스 `games/lure/data/lure/LICENSE.txt` 6조
   (무료배포 OK · 상업배포물 포함 OK · **게임 유료화 금지** · 개조 시 명시). 원본 zip 무개조(sha256 고정).
 - 엔진: ScummVM v2026.3.0, lure 엔진만 Emscripten(emsdk 6.0.0, `~/Downloads/emsdk`) 빌드. GPLv3 → `engine-patches/` 전체 공개.
@@ -9,12 +13,15 @@
 
 ## 실행
     export PATH="$HOME/.nvm/versions/node/v23.11.0/bin:$PATH"
-    npm install && npm run game:fetch && npm run font:fetch
+    npm install && npm run font:fetch
+    npm run game:fetch -- lure && npm run game:fetch -- soltys   # 인자 없으면 lure
     npm run engine:build      # 클론(v2026.3.0)→패치→configure→make→dist. M1 Mac 기준 2~3분 (pkg-config 필요: brew install pkgconf)
-    npm run data:stage        # 게임 파일 → dist data/games/lure + index.json, public/engine 심볼릭 링크
+                              # 엔진 선택은 ENGINES=lure,cge (기본). 목록이 바뀌면 .engines-stamp 로 자동 재configure
+    npm run data:stage        # 데이터가 있는 게임 전부 → dist data/games/<id> + index.json, public/engine 심볼릭 링크
     npm run dev               # http://localhost:3046  (launch.json: scummvm-web-v8)
     npm test                  # vitest 9
-    node tools/smoke.mjs [--lang=ko]   # 헤드리스 스모크(부팅→인트로 스킵→동사 팝업→대화창→닫기, 스크린샷 docs/superpowers/plans/shots/)
+    node tools/smoke.mjs [--lang=ko]   # Lure 전용 헤드리스 스모크(부팅→인트로 스킵→동사 팝업→대화창→닫기, 스크린샷 docs/superpowers/plans/shots/)
+    npm run smoke:boot -- --game=soltys --keys=Escape,Escape --clicks=250,150   # 게임 무관 부팅 스모크
     npm run strings:dump      # 엔진 훅으로 문자열 전수 덤프 → games/lure/strings.en.json
     npm run i18n:check        # ko.json 검수(커버리지·플레이스홀더·조사·용어집·길이)
 
@@ -81,6 +88,9 @@
 ## 알려진 함정
 - Vite dev 서버 기동 후 새 의존성을 설치하면 `504 Outdated Optimize Dep`로 모듈 로드가 통째로 실패(시작 버튼이 안 켜짐) → `rm -rf node_modules/.vite` 후 서버 재시작.
 - 스모크의 인트로 스킵 Escape가 인트로 종료 후 도달하면 인게임 종료 확인("Are you sure (y/n)?")이 뜬다 → 스모크가 `n`으로 닫음.
+- **캔버스 픽셀을 JS(`drawImage`/`getImageData`)로 읽으면 검은 화면이 나온다** — WebGL 드로잉 버퍼가 프레임 밖에서 비어 있다.
+  간헐적으로 맞는 값이 섞여 나와 더 헷갈린다. 화면 검증은 스크린샷을 찍어 디코드할 것(`tools/lib/png.mjs`).
+- **`scummvm.ini`는 IDBFS에 한 번 저장되면 다시 fetch 하지 않는다** — ini에 게임 섹션을 추가해도 이미 플레이한 브라우저엔 반영 안 됨.
 - **브라우저 탭이 hidden이면 엔진이 1틱/초로 스로틀**(Asyncify sleep = setTimeout). 프리뷰 패널이 접혀 있거나 Chrome 창이 가려지면 멈춘 듯 보임.
   검증은 `tools/smoke.mjs`(헤드리스, `--disable-background-timer-throttling`)로.
 - build.sh는 시작 시 `git checkout -- . && git clean -fd engines backends dists`로 소스를 리셋 → 패치는 **먼저 .patch로 뽑고** 빌드.
