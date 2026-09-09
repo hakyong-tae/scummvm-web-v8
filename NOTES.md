@@ -1,6 +1,10 @@
-# scummvm-web-v8 — Lure of the Temptress 웹판 구조 노트
+# scummvm-web-v8 — ScummVM 웹판(한글 자막) 구조 노트
 
-## 개요
+**이 레포는 게임 1개가 아니라 "ScummVM 셸 = 재사용 코어"다.** 현재 `lure`(배포 완료) / `soltys`(S1~S5 완료 — V8 프로젝트 생성 + push만 남음).
+게임 선택은 `?game=<id>` → `VITE_GAME` → 기본 `lure`. 게임별 정의는 `src/config.ts`의 `GAMES` 레지스트리.
+Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§11.
+
+## 개요 (Lure)
 - 게임: Lure of the Temptress (1992, Revolution Software) — 프리웨어. 라이선스 `games/lure/data/lure/LICENSE.txt` 6조
   (무료배포 OK · 상업배포물 포함 OK · **게임 유료화 금지** · 개조 시 명시). 원본 zip 무개조(sha256 고정).
 - 엔진: ScummVM v2026.3.0, lure 엔진만 Emscripten(emsdk 6.0.0, `~/Downloads/emsdk`) 빌드. GPLv3 → `engine-patches/` 전체 공개.
@@ -9,20 +13,26 @@
 
 ## 실행
     export PATH="$HOME/.nvm/versions/node/v23.11.0/bin:$PATH"
-    npm install && npm run game:fetch && npm run font:fetch
+    npm install && npm run font:fetch
+    npm run game:fetch -- lure && npm run game:fetch -- soltys   # 인자 없으면 lure
     npm run engine:build      # 클론(v2026.3.0)→패치→configure→make→dist. M1 Mac 기준 2~3분 (pkg-config 필요: brew install pkgconf)
-    npm run data:stage        # 게임 파일 → dist data/games/lure + index.json, public/engine 심볼릭 링크
+                              # 엔진 선택은 ENGINES=lure,cge (기본). 목록이 바뀌면 .engines-stamp 로 자동 재configure
+    npm run data:stage        # 데이터가 있는 게임 전부 → dist data/games/<id> + index.json, public/engine 심볼릭 링크
     npm run dev               # http://localhost:3046  (launch.json: scummvm-web-v8)
     npm test                  # vitest 9
-    node tools/smoke.mjs [--lang=ko]   # 헤드리스 스모크(부팅→인트로 스킵→동사 팝업→대화창→닫기, 스크린샷 docs/superpowers/plans/shots/)
-    npm run strings:dump      # 엔진 훅으로 문자열 전수 덤프 → games/lure/strings.en.json
-    npm run i18n:check        # ko.json 검수(커버리지·플레이스홀더·조사·용어집·길이)
+    node tools/smoke.mjs [--lang=ko]   # Lure 전용 헤드리스 스모크(부팅→인트로 스킵→동사 팝업→대화창→닫기, 스크린샷 docs/superpowers/plans/shots/)
+    npm run smoke:boot -- --game=soltys --keys=Escape,Escape --clicks=250,150   # 게임 무관 부팅 스모크
+    npm run strings:dump [-- --game=soltys]   # 엔진 훅으로 문자열 전수 덤프 → games/<game>/strings.en.json
+    npm run i18n:check [-- --game=soltys]     # ko.json 검수(커버리지·플레이스홀더·조사·용어집·길이)
+    npm run names:dump        # (CGE) vol.dat에서 스프라이트 이름 전수 추출 — 상태줄 라벨은 SAY 파일 밖에 있다
 
 ## 파일 구조 / 데이터 흐름
 - `public/engine -> engine/scummvm/build-emscripten` : scummvm.js/wasm + data/(lure.dat, 테마, games/lure/)
 - ScummVM HTTP FS: `DATA_PATH=/data` 절대경로 → 패치 03이 `Module.httpFsBaseUrl`(= engine/ URL) 접두 → 하위경로 호스팅(V8) 대응.
   같은 패치에 `response.bytes()` 폴백(Chrome 133+/Safari 18.4+ 전용 API → 구형 브라우저는 arrayBuffer).
-- `public/scummvm.ini` : IDBFS(`/home/web_user`)에 없을 때 1회 fetch. `savepath=/home/web_user/saves`, `aspect_ratio=false`, `stretch_mode=fit`
+- `public/scummvm.ini` : IDBFS(`/home/web_user`)에 없을 때 1회 fetch. **`[scummvm]` 전역 설정만 둔다** — 게임은
+  `--path=/data/games/<id> <target>` 인자로 띄우므로 게임 섹션이 필요 없다(IDBFS에 캐시된 낡은 ini 문제를 원천 차단).
+  `savepath=/home/web_user/saves`, `aspect_ratio=false`, `stretch_mode=fit`
   → 캔버스 CSS 박스 = 320×200 선형 매핑(레이어 좌표는 `getBoundingClientRect()/320`).
 - 텍스트 파이프라인(패치 01, `engines/lure/webtext.{h,cpp}`):
   `Surface::writeSubstring` → `WebText::record`(표면 로컬 좌표, 글자색·배경 팔레트 인덱스, 폭px)
@@ -33,6 +43,22 @@
 - 레코드 교체 규칙: **같은 줄(|Δy|<4)이고 x가 겹칠 때만** 교체. 대화창이 squashedLines(7px 피치, 8px 글리프)라 인접 줄이 1px 겹치기 때문.
 - 사라진 텍스트 판정: 싱크 시점에 레코드 박스 안에 글자색 픽셀이 4개 미만이면 제거(엔진이 덮어그린 것으로 간주).
 - JSON 색은 팔레트 인덱스 → RGB 변환해 전달(`Screen::getReference().getPalette()` 4바이트/엔트리).
+
+## 엔진 텍스트 훅 — 게임별 (패치 01=lure, 06=cge)
+두 패치 모두 같은 레코드 JSON(`{x,y,w,h,t,c:[r,g,b],b:[r,g,b]}`)을 `Module.onLureText`로 보낸다 →
+`src/text/layer.ts`가 게임을 구분하지 않는다. **`onLure*` 는 이제 Lure 전용이 아니라 셸 전체의 콜백 이름**이다.
+
+| | Lure (패치 01) | CGE/Soltys (패치 06) |
+|---|---|---|
+| 그리는 곳 | 화면 표면에 직접(`Surface::writeSubstring`) | 스프라이트 비트맵 안(`Talk::update`) → 나중에 블릿 |
+| 좌표 확보 | 같은 훅에서 바로 | `Sprite::show()`에서 별도로 |
+| 프레임 방출 | `Screen::update/updateArea` → `present()` | `Vga::update()` → `frame()` (`Vga::show()`에서만 호출) |
+| 사라짐 판정 | 글자색 픽셀 4개 미만이면 제거 | 불필요 — 프레임마다 목록을 새로 만든다 |
+| 번역 키 | `"<table>:<local>"` (방 번호에 따라 테이블이 겹침) | **ref 정수 하나** (`Text::getText(ref)`) |
+| 상태줄 | "동사 + 이름" 연결 → `StatusComposer` 합성 필요 | 스프라이트 이름 하나 → 합성 불필요 |
+| 문자열 수 | 1,804 | 327 (+ 스프라이트 이름 261개는 SAY 밖 → `tools/dump-cge-names.py`) |
+| 사전 | `i18n/dict.ts` KoDict + StatusComposer | `i18n/dictRef.ts` RefDict (영문→한글 맵 하나) |
+| 줄 간격 | 7px | **10px** — `blocks.ts` 기본값(7~9)으로는 문단이 안 묶인다(`GameDef.linePitch`) |
 
 ## M3 한글 파이프라인
 - **키 체계**: 문자열 ID 공간이 방 번호에 따라 테이블 1/2를 겹쳐 쓰므로(`StringData::resolveTable`: 방≥0x2A면 0x7d0~0xfa0가, <0x2A면 ≥0xfa0가 0x76으로 대체) 번역 키는 `"<table>:<local>"`. `games/lure/ko.json` = `{list:{액션idx:템플릿}, t:{키:템플릿}}`.
@@ -45,7 +71,7 @@
 - **미번역 영역**: 상단 메뉴바(비트맵), 인트로/엔딩 자막(프레임 합성). 저장 슬롯 이름은 사용자 입력.
 
 ## M4 V8 통합
-- **제목** `Lure of the Temptress (한글판)`(`src/config.ts` GAME_TITLE), 부제 "유혹의 마녀". 스토어 문안 `docs/STORE.md`.
+- **제목** `Lure of the Temptress (한글판)`(`src/config.ts` GAME_TITLE), 부제 "유혹의 마녀". 스토어 문안 `docs/store/lure.md`.
 - **터치**: `pointer: coarse`(또는 `?touch=1`)면 캔버스 위 `#touchpad` 오버레이가 터치 포인터를 받아 **합성 PointerEvent(pointerType 'mouse')** 를 캔버스에 디스패치. SDL3 Emscripten은 pointer 이벤트만 듣고 MouseEvent 합성은 무시(실측). 트랙패드 모드: 드래그=커서 이동(1:1), 탭=좌클릭, 롱프레스 400ms=우버튼 다운(동사 팝업, Lure 원작이 '누른 동안 표시'라 정확히 대응), 놓기=우버튼 업. 직접탭 모드 옵션. 마우스 포인터는 오버레이가 캔버스로 전달(하이브리드 기기).
 - **클라우드 세이브**: `server/src/server.ts`(agent8, 컬렉션 `lure_saves`, 계정·슬롯별 base64) ↔ `src/save/*`. 전역 `FS`(비-MODULARIZE 빌드라 window.FS)로 `/home/web_user/saves` 스냅샷을 5초 폴링, 변경 시 업로드. 부팅 3초 후 diff: 클라우드 전용→다운로드, 로컬 최신→업로드, 둘 다 있고 클라우드 최신→confirm. 플랫폼 밖(`VITE_AGENT8_VERSE` 없음)이면 "저장: 로컬". 접속은 스토어 경유(`@agent8/gameserver/dist/src/store/useGameServerStore` 리터럴 딥임포트). SDK가 react 18 peer 요구 → 설치 필요.
 - **광고**: `@verse8/ads` 정적 import, 인터스티셜 시작(`lure-start`)·종료(`lure-quit`) 각 1회. 호스트 밖은 1.5초 mock.
@@ -54,12 +80,14 @@
 - **캔버스 맞춤**: 정수배→contain 소수 배율(폰 가로에서 정수배는 화면 절반). 세로 화면(coarse)이면 회전 안내.
 
 ## M5 배포 준비
-- Verse8 빌더는 `bun run build`만 → **엔진 산출물을 실파일로 커밋**해야 함. `tools/prepare-deploy.sh` → `deploy/`(16MB: scummvm.js/wasm + data{lure.dat, scummmodern.zip, gui-icons, games/lure} + 셸 + server/ + engine-patches + 문서), V8용 package.json(emscripten 스크립트 제외), lock 파일 없음.
-- 하위경로 검증: `node tools/serve-subpath.mjs` → `http://localhost:3047/g/lure/` → `smoke --lang=ko <url>` OK. 절대경로는 `assetUrl()`로 전부 제거, `base:'./'`, GAME_SIZE 핸드셰이크.
+- Verse8 빌더는 `bun run build`만 → **엔진 산출물을 실파일로 커밋**해야 함. `tools/prepare-deploy.sh <game>` → **`deploy/<game>/`**(lure 17MB · soltys 19MB: scummvm.js/wasm + 그 게임의 data + 셸 + server/ + engine-patches + 문서), V8용 package.json(emscripten 스크립트 제외), lock 파일 없음. 게임마다 V8 프로젝트가 따로다.
+  배포본은 `.env.production`의 `VITE_GAME`으로 게임이 고정되고, 세이브 컬렉션명도 게임별로 치환된다(**이미 배포된 게임 이름은 바꾸지 말 것**).
+  ⚠️ prepare는 `rm -rf deploy/<game>` 부터 하므로 **build는 prepare 다음에**.
+- 하위경로 검증: `node tools/serve-subpath.mjs <game>` → `http://localhost:3057/g/<game>/` → 스모크 OK. 절대경로는 `assetUrl()`로 전부 제거, `base:'./'`, GAME_SIZE 핸드셰이크. (3047은 다른 프로젝트가 쓴다)
 - 절차·V8 AI 프롬프트: `docs/DEPLOY-VERSE8.md`. **배포 push 완료(2026-09-06)**: `gitlab.verse8.io/hy.tae90/lure-of-the-temptress-kr` develop `5909aac`. 플랫폼 파일(.env/.agent8.lock/committedAt/PROJECT) 보존, 템플릿 .gitignore에 dist/·package-lock 병합.
 
 ## 원스토어(ONE store) 요건 대응 (2026-09-07)
-- 폼 `[Verse8] Application Form for ONE Store` 요건 ↔ 구현: 광고 필수(전면 시작/종료 + **Opt-in 힌트 광고** `💡`), **모든 SDK 호출 `timeoutMs: 120_000`**(생략=30초=반려), 계정 서버 저장(agent8 `server/src/server.ts` — 검수기가 `server/src/*.ts`만 인정해 루트 server.js에서 이동), 한/영(게임 자막 + **셸 UI 전부** `src/i18n/ui.ts` data-ui), viewport, 가로 전용, 터치만으로 완주(Esc·⌨ 입력·y/n 버튼 보조), 설명 KO→EN(`docs/STORE-SHORT.md`), 확률형 없음.
+- 폼 `[Verse8] Application Form for ONE Store` 요건 ↔ 구현: 광고 필수(전면 시작/종료 + **Opt-in 힌트 광고** `💡`), **모든 SDK 호출 `timeoutMs: 120_000`**(생략=30초=반려), 계정 서버 저장(agent8 `server/src/server.ts` — 검수기가 `server/src/*.ts`만 인정해 루트 server.js에서 이동), 한/영(게임 자막 + **셸 UI 전부** `src/i18n/ui.ts` data-ui), viewport, 가로 전용, 터치만으로 완주(Esc·⌨ 입력·y/n 버튼 보조), 설명 KO→EN(`docs/store/<game>-short.md`), 확률형 없음.
 - 답안: `docs/ONESTORE-FORM.md`. 검수기(`hakyong-tae/anything` v8-checker `check.py`)를 `deploy/`에 로컬 적용해 **통과(FAIL 0)** 확인 — 검수기는 `showInterstitial(`/`showRewarded(` 호출부를 전부 SDK 호출로 보므로 래퍼 이름은 `playInterstitialAd/playRewardedAd`.
 - 힌트 콘텐츠 `games/lure/hints.json`(ko/en 8구간)은 우리가 쓴 공략 노트 — 원작 데이터 아님, 라이선스 3조와 무관. 합성 KeyboardEvent는 canvas dispatch로 SDL3에 전달됨(실측).
 
@@ -81,10 +109,14 @@
 ## 알려진 함정
 - Vite dev 서버 기동 후 새 의존성을 설치하면 `504 Outdated Optimize Dep`로 모듈 로드가 통째로 실패(시작 버튼이 안 켜짐) → `rm -rf node_modules/.vite` 후 서버 재시작.
 - 스모크의 인트로 스킵 Escape가 인트로 종료 후 도달하면 인게임 종료 확인("Are you sure (y/n)?")이 뜬다 → 스모크가 `n`으로 닫음.
+- **캔버스 픽셀을 JS(`drawImage`/`getImageData`)로 읽으면 검은 화면이 나온다** — WebGL 드로잉 버퍼가 프레임 밖에서 비어 있다.
+  간헐적으로 맞는 값이 섞여 나와 더 헷갈린다. 화면 검증은 스크린샷을 찍어 디코드할 것(`tools/lib/png.mjs`).
+- **`scummvm.ini`는 IDBFS에 한 번 저장되면 다시 fetch 하지 않는다** — 그래서 게임은 ini 섹션이 아니라 `--path=` 인자로 띄운다(26-09-09).
 - **브라우저 탭이 hidden이면 엔진이 1틱/초로 스로틀**(Asyncify sleep = setTimeout). 프리뷰 패널이 접혀 있거나 Chrome 창이 가려지면 멈춘 듯 보임.
   검증은 `tools/smoke.mjs`(헤드리스, `--disable-background-timer-throttling`)로.
 - build.sh는 시작 시 `git checkout -- . && git clean -fd engines backends dists`로 소스를 리셋 → 패치는 **먼저 .patch로 뽑고** 빌드.
-  패치 편집 절차: 클론 트리에서 파일 수정 → `git add -N 신규파일` → `git diff -- engines/lure > engine-patches/01-*.patch`.
+  패치 편집 절차: 클론 트리에서 파일 수정 → `git add -N 신규파일` → `git diff -- engines/<engine> > engine-patches/NN-*.patch`
+  → **`git reset <신규파일>`** (인덱스에 남겨 두면 `git clean`이 못 지워 다음 빌드가 `already exists in working directory`로 죽는다).
 - `webtext.cpp` 맨 위 `#define FORBIDDEN_SYMBOL_ALLOW_ALL` 필수(ScummVM forbidden.h가 emscripten.h의 FILE과 충돌).
 - Emscripten pre-js가 `Module.arguments`를 비우던 것을 패치 02로 보존. Web MIDI는 `Module.enableWebMIDI=true`일 때만 요청(권한 팝업 방지).
 - `#start{display:flex}`가 `hidden`을 덮어씀 → `#start[hidden]{display:none}` 필요(한 번 당함).

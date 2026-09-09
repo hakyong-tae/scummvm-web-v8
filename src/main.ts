@@ -1,9 +1,10 @@
 import { bootEngine } from './engine/loader'
 import { TextLayer } from './text/layer'
 import { KoDict, type EnDump, type KoData } from './i18n/dict'
+import { RefDict, type RefEnDump, type RefKoData } from './i18n/dictRef'
 import { StatusComposer } from './i18n/status'
 import { resolveBlock } from './i18n/resolve'
-import { assetUrl, GAME_TITLE, AD_PLACEMENT_START, AD_PLACEMENT_QUIT } from './config'
+import { assetUrl, GAME, GAME_TITLE, gameText, prefKey, gameKey, AD_PLACEMENT_START, AD_PLACEMENT_QUIT } from './config'
 import { TrackpadFSM, attachTrackpad, clickAtCss } from './input/trackpad'
 import { playInterstitialAd } from './verse8/ads'
 import { SaveSyncController } from './save/syncController'
@@ -26,15 +27,15 @@ const params = new URLSearchParams(location.search)
 const GAME_W = 320, GAME_H = 200
 
 // ── 설정(로컬 저장) ──────────────────────────────────────────────────────────
-if (params.get('lang')) localStorage.setItem('lure.lang', params.get('lang')!)   // URL은 초기값만; 이후 토글이 우선
+if (params.get('lang')) localStorage.setItem(prefKey('lang'), params.get('lang')!)   // URL은 초기값만; 이후 토글이 우선
 const prefs = {
-  get lang() { return localStorage.getItem('lure.lang') ?? 'ko' },
-  set lang(v: string) { localStorage.setItem('lure.lang', v) },
-  get touch() { return (localStorage.getItem('lure.touch') as 'trackpad' | 'direct') ?? 'trackpad' },
-  set touch(v: 'trackpad' | 'direct') { localStorage.setItem('lure.touch', v) },
+  get lang() { return localStorage.getItem(prefKey('lang')) ?? 'ko' },
+  set lang(v: string) { localStorage.setItem(prefKey('lang'), v) },
+  get touch() { return (localStorage.getItem(prefKey('touch')) as 'trackpad' | 'direct') ?? 'trackpad' },
+  set touch(v: 'trackpad' | 'direct') { localStorage.setItem(prefKey('touch'), v) },
 }
 document.title = GAME_TITLE
-$('title').textContent = 'Lure of the Temptress'
+$('title').textContent = GAME.name
 
 // ── 캔버스 맞춤: contain(소수 배율) — 폰 가로에서 정수배는 화면을 절반도 못 채움 ──
 function fitCanvas() {
@@ -99,9 +100,9 @@ function watchTalkChoices(recs: { x: number; y: number; w: number; h: number; t:
     b.onclick = async (e) => { e.preventDefault(); await clickAtCss(canvas, rect.left + 40 * sx, rect.top + (l.y + 4) * sy) }
     choicesEl.appendChild(b)
   })
-  if (!localStorage.getItem('lure.toast.choices')) {
+  if (!localStorage.getItem(gameKey('toast.choices'))) {
     const t = $('toast'); t.textContent = ui(prefs.lang).choicesHint; t.hidden = false
-    setTimeout(() => { t.hidden = true; localStorage.setItem('lure.toast.choices', '1') }, 6000)
+    setTimeout(() => { t.hidden = true; localStorage.setItem(gameKey('toast.choices'), '1') }, 6000)
   }
 }
 // PC 키보드: 대화 선택지는 엔진이 마우스 y로 고르므로 ↑↓를 합성 포인터 이동으로, 동작 팝업은 휠 이벤트로 바꾼다. Enter = 합성 좌클릭.
@@ -142,15 +143,26 @@ const layer = new TextLayer($('textlayer'), canvas)
 layer.setEnabled(params.get('layer') !== '0')
 let dict: KoDict | null = null
 let statusComposer: StatusComposer | null = null
+layer.setPitch(GAME.linePitch)
 async function loadKorean() {
   if (prefs.lang !== 'ko') { layer.setTranslateBlock(null); return }
   try {
     const [en, ko] = await Promise.all([
-      fetch(assetUrl('games/lure/strings.en.json')).then(r => r.json()) as Promise<EnDump>,
-      fetch(assetUrl('games/lure/ko.json')).then(r => r.json()) as Promise<KoData>,
+      fetch(assetUrl(`games/${GAME.id}/strings.en.json`)).then(r => r.json()),
+      fetch(assetUrl(`games/${GAME.id}/ko.json`)).then(r => r.json()),
     ])
-    dict = new KoDict(en, ko)
-    statusComposer = new StatusComposer(dict, en, ko, { for: 35, to: 36, on: 37 })  // res_struct.h StringEnum
+    if (GAME.i18n === 'ref') {
+      // CGE 계열: SAY ref 사전 하나로 끝난다(조사 합성·이름 치환 없음)
+      const rd = new RefDict(en as RefEnDump, ko as RefKoData)
+      const cov = rd.coverage()
+      console.log(`[i18n] ${GAME.id} 번역 ${cov.translated}/${cov.total}`)
+      layer.setTranslateBlock((lines) => resolveBlock(lines, {
+        lookup: (s) => rd.lookup(s), compose: () => null, prefix: (s) => rd.lookupPrefix(s),
+      }))
+      return
+    }
+    dict = new KoDict(en as EnDump, ko as KoData)
+    statusComposer = new StatusComposer(dict, en as EnDump, ko as KoData, { for: 35, to: 36, on: 37 })  // res_struct.h StringEnum
     layer.setTranslateBlock((lines) => resolveBlock(lines, {
       lookup: (s) => dict!.lookup(s), compose: (s) => statusComposer!.compose(s),
       prefix: (s) => dict!.lookupPrefix(s), menuItem: (s) => statusComposer!.compose(s, true),
@@ -162,7 +174,7 @@ async function loadKorean() {
 const langBtn = $<HTMLButtonElement>('langBtn'), selLang = $<HTMLSelectElement>('selLang'), selTouch = $<HTMLSelectElement>('selTouch')
 /** 셸 UI 전체를 현재 언어로 다시 채움(data-ui / data-ui-title) */
 function applyUiLang() {
-  const s = ui(prefs.lang) as unknown as Record<string, string>
+  const s: Record<string, string> = { ...(ui(prefs.lang) as unknown as Record<string, string>), ...gameText(prefs.lang) }   // 게임별 문안이 공통 문안을 덮는다
   document.documentElement.lang = prefs.lang
   document.querySelectorAll<HTMLElement>('[data-ui]').forEach(el => { const v = s[el.dataset.ui!]; if (typeof v === 'string') el.textContent = v })
   document.querySelectorAll<HTMLElement>('[data-ui-title]').forEach(el => { const v = s[el.dataset.uiTitle!]; if (typeof v === 'string') el.title = v })
@@ -173,10 +185,10 @@ function applyUiLang() {
 }
 /** 부팅 후 1회 조작 안내 토스트(기기별 저장) */
 function showControlsToast() {
-  if (localStorage.getItem('lure.toast.controls')) return
-  const t = $('toast'); const s = ui(prefs.lang)
-  t.textContent = `${s.controlsTitle}: ${coarse ? s.touchHelp : s.pcHelp}`; t.hidden = false
-  setTimeout(() => { t.hidden = true; localStorage.setItem('lure.toast.controls', '1') }, 9000)
+  if (localStorage.getItem(gameKey('toast.controls'))) return
+  const t = $('toast'); const s = ui(prefs.lang), g = gameText(prefs.lang)
+  t.textContent = `${s.controlsTitle}: ${coarse ? g.touchHelp : g.pcHelp}`; t.hidden = false
+  setTimeout(() => { t.hidden = true; localStorage.setItem(gameKey('toast.controls'), '1') }, 9000)
 }
 const syncLangUi = () => applyUiLang()
 langBtn.onclick = () => { prefs.lang = prefs.lang === 'ko' ? 'en' : 'ko'; syncLangUi() }
@@ -217,7 +229,7 @@ startBtn.onclick = async () => {
   await loadKorean()
   startBtn.textContent = ui(prefs.lang).loadingEngine
   await bootEngine({
-    canvas, engineBase: assetUrl('engine/'), args: ['lure'],
+    canvas, engineBase: assetUrl('engine/'), args: ['--path=/data/games/' + GAME.id, GAME.id],   // ini에 게임 섹션이 없어도 됨(IDBFS에 캐시된 ini가 낡아도 안전)
     callbacks: {
       onStatus: (t) => { statusEl.textContent = t },
       onReady: () => { startEl.hidden = true; $('hud').hidden = promo; canvas.focus(); if (params.get('debug') === '1') (window.Module as Record<string, unknown>).lureDebug = true; setTimeout(() => void sync.start(), 3000); if (!promo) setTimeout(showControlsToast, 2500) },
