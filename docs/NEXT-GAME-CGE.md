@@ -2,7 +2,7 @@
 
 Lure of the Temptress 웹판(이 레포)에 이어 같은 방식으로 올릴 다음 후보 두 개의 **사전 검증 결과와 작업 계획**.
 작성 2026-09-09. 검증은 라이선스 원문·ScummVM 소스 실물 확인까지 마쳤다.
-**2026-09-09 갱신: Soltys는 S1~S4 완료** — 아래 §7~§10 참조. 남은 것은 S5(배포). Sfinx(cge2)는 아직 사전 조사 상태.
+**2026-09-09 갱신: Soltys는 S1~S5 완료** — 아래 §7~§11 참조. 남은 것은 V8 프로젝트 생성 + push(토큰 필요)와 한글 감수. Sfinx(cge2)는 아직 사전 조사 상태.
 
 ---
 
@@ -88,7 +88,7 @@ CGE는 텍스트를 **스프라이트 비트맵 안에** 그리고, 그 스프�
 | S2 | 훅 4개 + DOM 레이어를 **영문 패스스루**로 | 원본과 시각적 동등 | ✅ **완료(§8)** |
 | S3 | 문자열 전수 덤프 → 용어집 → ko.json → i18n-check | 초반 구간 한글 완주 | ✅ **완료(§9)** — 화면 문자열 100% |
 | S4 | 셸 일반화(게임 선택), 터치·키보드·세이브·광고·고지 배선 | 폰 완주, 기기 간 이어하기 | ✅ **완료(§10)** — 클라우드 세이브는 배포 후 확인 |
-| S5 | `prepare-deploy.sh soltys` → 하위경로 스모크 → V8 push | 프리뷰 동작 | 다음 |
+| S5 | `prepare-deploy.sh soltys` → 하위경로 스모크 → V8 push | 프리뷰 동작 | ✅ **배포본까지 완료(§11)** — push는 토큰·프로젝트 필요 |
 
 Sfinx는 S1·S2를 Soltys 훅에서 거의 복사할 수 있으므로 **Soltys를 먼저 끝내고 시작하는 편이 훨씬 싸다.**
 
@@ -285,3 +285,39 @@ ini에는 `[scummvm]` 전역 설정만 남는다 → **IDBFS에 캐시된 낡은
 - **클라우드 세이브(기기 간 이어하기)** — agent8은 Verse8 플랫폼 위에서만 붙으므로 로컬에서는 "저장: 로컬"이다. S5 배포 후 확인.
 - `server/src/server.ts`의 컬렉션 이름이 `lure_saves`로 박혀 있다. 게임마다 V8 프로젝트(=DB)가 따로라 당장 문제는 없지만,
   **S5의 `prepare-deploy.sh`가 게임별 이름으로 치환**해야 한다. Lure는 이미 배포돼 있으므로 `lure_saves`를 그대로 유지할 것(바꾸면 기존 클라우드 세이브가 끊긴다).
+
+
+---
+
+## 11. S5 결과 (2026-09-09) — 배포본 생성·하위경로 검증
+
+`deploy/` 가 **게임별 폴더**가 됐다: `deploy/lure/`(17MB) · `deploy/soltys/`(19MB). 각각이 V8 프로젝트 하나에 대응한다.
+
+    npm run deploy:prepare -- soltys
+    cd deploy/soltys && npm install --legacy-peer-deps && npm run build && cd ../..
+    npm run deploy:serve -- soltys          # http://localhost:3057/g/soltys/
+
+`prepare-deploy.sh <game>`가 게임별로 하는 일:
+- **그 게임의 엔진 데이터·번역·힌트만** 담는다(다른 게임 것은 넣지 않는다)
+- `.env.production` 에 `VITE_GAME=<game>` → **`?game=` 없이 열어도 맞는 게임**이 뜬다(실측)
+- `server/src/server.ts` 의 클라우드 세이브 컬렉션명을 게임별로 치환(`soltys_saves`).
+  ⚠️ **이미 배포된 게임의 이름은 바꾸지 말 것** — 기존 클라우드 세이브가 끊긴다(lure는 `lure_saves` 유지)
+- `docs/store/<game>{,-short}.md` 동봉
+
+### 검증
+- 하위경로 `/g/soltys/` 에서 index·wasm·ko.json·hints.json·vol.dat 전부 200, `--lang=ko` 스모크 통과(말풍선·상태줄·메뉴 한글).
+- Lure도 `deploy/lure/` 로 다시 만들어 `/g/lure/` 에서 기존 전용 스모크 통과 — 배포 구조 변경이 이미 나간 게임을 깨지 않았다.
+- 두 번들 모두 `"@agent8/gameserver"` bare specifier 0건, index.html에 절대경로 0건.
+- 원스토어 요건은 셸 공통이라 그대로 따라온다: 광고 `timeoutMs: 120_000` 3곳, `server/src/*.ts`, viewport, 한/영 셸 UI.
+  (검수기 `check.py`는 이 머신에 없어 **실행하지 못했다** — push 전에 `hakyong-tae/anything` v8-checker로 한 번 돌릴 것.)
+
+### 남은 일
+1. **Soltys용 V8 프로젝트 생성** → `SOLTYS_REPO=… bash tools/push-verse8.sh <토큰> soltys "…"`
+2. 배포 후 **클라우드 세이브 왕복**과 실광고 확인(로컬에서는 agent8이 안 붙어 "저장: 로컬")
+3. **한글 감수** — LLM 초벌이다. 실플레이하며 말투·오역, 특히 말장난 3곳 재검토
+4. 원스토어 폼 답안에 Soltys 항목 추가(`docs/ONESTORE-FORM.md`는 아직 Lure 기준)
+
+### 함정
+- `prepare-deploy.sh` 는 `rm -rf deploy/<game>` 부터 한다 → **`npm install && npm run build` 는 prepare 다음에** 해야 한다.
+  순서를 바꾸면 방금 만든 `dist/`가 지워진다(한 번 당함).
+- `serve-subpath.mjs` 기본 포트를 3047 → **3057**로 옮겼다. 3047은 이 머신의 다른 프로젝트(scar-flame)가 쓴다.
