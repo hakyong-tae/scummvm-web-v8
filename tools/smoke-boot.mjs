@@ -1,6 +1,7 @@
 // 게임 무관 헤드리스 부팅 스모크: 부팅 → 엔진 기동 → 화면 렌더 확인 → 키 입력 → 스크린샷
 //   node tools/smoke-boot.mjs --game=soltys [--secs=25] [--steps=...] [baseUrl]
 //   --steps 는 ';' 로 구분한 순서 있는 동작: key:Escape · move:x,y · click:x,y · rclick:x,y · wait:3 · shot:이름
+//   --touch 를 주면 터치 에뮬레이션 + 트랙패드 모드로 같은 동작을 재현한다(가상 커서를 드래그로 옮긴 뒤 탭/롱프레스)
 //   좌표는 320x200 게임 좌표(캔버스 박스에 선형 매핑)
 // 판정: (1) "Running …" 로그 (2) 캔버스 영역 스크린샷이 단색이 아님(고유색 ≥ 8) (3) pageerror 0
 // 주의: 캔버스를 drawImage/getImageData로 읽으면 WebGL 드로잉 버퍼가 프레임 밖에서 비어 항상 검게 나온다 → 스크린샷을 디코드한다.
@@ -14,9 +15,11 @@ const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)
 const game = arg('game', 'lure')
 const secs = Number(arg('secs', '25'))
 const lang = arg('lang', 'en')
+const touch = process.argv.includes('--touch')
 const steps = arg('steps', '') ? arg('steps', '').split(';').filter(Boolean) : []
 const base = process.argv.filter(a => !a.startsWith('--'))[2] || 'http://localhost:3046/'
 const outDir = new URL('../docs/superpowers/plans/shots/', import.meta.url).pathname
+const tag = touch ? 'touch-' : ''
 mkdirSync(outDir, { recursive: true })
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -26,11 +29,16 @@ const browser = await puppeteer.launch({
          '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--autoplay-policy=no-user-gesture-required'],
 })
 const page = await browser.newPage()
-await page.setViewport({ width: 1400, height: 900 })
+await page.setViewport(touch ? { width: 844, height: 390, isMobile: true, hasTouch: true } : { width: 1400, height: 900 })
+if (touch) {
+  const cdp = await page.createCDPSession()
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  await cdp.send('Emulation.setEmitTouchEventsForMouse', { enabled: false })
+}
 const logs = [], errors = []
 page.on('console', m => logs.push(m.text()))
 page.on('pageerror', e => { errors.push(e.message); logs.push('PAGEERROR ' + e.message) })
-await page.goto(`${base}?game=${game}&lang=${lang}`, { waitUntil: 'load' })
+await page.goto(`${base}?game=${game}&lang=${lang}${touch ? '&touch=1' : ''}`, { waitUntil: 'load' })
 await page.click('#startBtn')
 
 const t0 = Date.now()
@@ -46,7 +54,7 @@ const shot = async (name) => {
   const spans = await page.evaluate(() => [...document.querySelectorAll('#textlayer span')].map(d => d.textContent))
   const koDivs = await page.evaluate(() => [...document.querySelectorAll('#textlayer .ko')].map(d => d.textContent))
   const buf = await page.screenshot({ clip })
-  const path = `${outDir}s1-${game}-${name}.png`
+  const path = `${outDir}s1-${game}-${tag}${name}.png`
   writeFileSync(path, buf)
   return { ...imageStats(decodePng(buf)), recs, spans, koDivs, path }
 }
@@ -62,16 +70,40 @@ const gxy = async () => {
   const b = await (await page.$('#canvas')).boundingBox()
   return [x => b.x + x * b.width / 320, y => b.y + y * b.height / 200]
 }
+// 트랙패드 모드는 상대 이동이라 가상 커서 위치를 따라가며 델타로 드래그한다(엔진 좌표계 320x200 기준)
+let cur = [160, 100]
+const anchor = [200, 150]
+async function trackpadTo(gx, gy, x, y) {
+  const ts = page.touchscreen
+  const dx = gx(x) - gx(cur[0]), dy = gy(y) - gy(cur[1])
+  if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+    await ts.touchStart(gx(anchor[0]), gy(anchor[1]))
+    await ts.touchMove(gx(anchor[0]) + dx, gy(anchor[1]) + dy)
+    await ts.touchEnd()
+    cur = [x, y]
+    await sleep(700)
+  }
+}
 for (const [i, step] of steps.entries()) {
   const [op, val = ''] = step.split(':')
   const [gx, gy] = await gxy()
   const [x, y] = val.split(',').map(Number)
+  const ts = page.touchscreen
   if (op === 'key') { await page.keyboard.press(val); await sleep(2500) }
-  else if (op === 'move') { await page.mouse.move(gx(x), gy(y)); await sleep(2000) }
-  else if (op === 'click') { await page.mouse.click(gx(x), gy(y)); await sleep(3000) }
-  else if (op === 'rclick') { await page.mouse.click(gx(x), gy(y), { button: 'right' }); await sleep(3000) }
+  else if (op === 'move') {
+    if (touch) await trackpadTo(gx, gy, x, y); else await page.mouse.move(gx(x), gy(y))
+    await sleep(2000)
+  } else if (op === 'click') {
+    if (touch) { await trackpadTo(gx, gy, x, y); await ts.touchStart(gx(anchor[0]), gy(anchor[1])); await sleep(120); await ts.touchEnd() }
+    else await page.mouse.click(gx(x), gy(y))
+    await sleep(3000)
+  } else if (op === 'rclick') {
+    if (touch) { await trackpadTo(gx, gy, x, y); await ts.touchStart(gx(anchor[0]), gy(anchor[1])); await sleep(900); await ts.touchEnd() }   // 롱프레스 = 우버튼
+    else await page.mouse.click(gx(x), gy(y), { button: 'right' })
+    await sleep(3000)
+  }
   else if (op === 'wait') { await sleep(Number(val) * 1000) }
-  else if (op === 'shot') { /* fall through to the shot below */ }
+  else if (op === 'shot') { /* 아래에서 찍는다 */ }
   else { console.log('unknown step', step); process.exitCode = 1 }
   const s = await shot(op === 'shot' ? val : `step${i + 1}-${op}`); shots.push(s)
   console.log(`step ${i + 1} ${step}`, JSON.stringify({ recs: s.recs, spans: s.spans, koDivs: s.koDivs, colors: s.colors }))

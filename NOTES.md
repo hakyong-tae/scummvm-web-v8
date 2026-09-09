@@ -1,8 +1,8 @@
 # scummvm-web-v8 — ScummVM 웹판(한글 자막) 구조 노트
 
-**이 레포는 게임 1개가 아니라 "ScummVM 셸 = 재사용 코어"다.** 현재 `lure`(완료) / `soltys`(S1~S3 완료 = 한글 100%, 진행 중).
+**이 레포는 게임 1개가 아니라 "ScummVM 셸 = 재사용 코어"다.** 현재 `lure`(완료) / `soltys`(S1~S4 완료, 남은 것은 배포).
 게임 선택은 `?game=<id>` → `VITE_GAME` → 기본 `lure`. 게임별 정의는 `src/config.ts`의 `GAMES` 레지스트리.
-Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§9.
+Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§10.
 
 ## 개요 (Lure)
 - 게임: Lure of the Temptress (1992, Revolution Software) — 프리웨어. 라이선스 `games/lure/data/lure/LICENSE.txt` 6조
@@ -30,7 +30,9 @@ Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§9.
 - `public/engine -> engine/scummvm/build-emscripten` : scummvm.js/wasm + data/(lure.dat, 테마, games/lure/)
 - ScummVM HTTP FS: `DATA_PATH=/data` 절대경로 → 패치 03이 `Module.httpFsBaseUrl`(= engine/ URL) 접두 → 하위경로 호스팅(V8) 대응.
   같은 패치에 `response.bytes()` 폴백(Chrome 133+/Safari 18.4+ 전용 API → 구형 브라우저는 arrayBuffer).
-- `public/scummvm.ini` : IDBFS(`/home/web_user`)에 없을 때 1회 fetch. `savepath=/home/web_user/saves`, `aspect_ratio=false`, `stretch_mode=fit`
+- `public/scummvm.ini` : IDBFS(`/home/web_user`)에 없을 때 1회 fetch. **`[scummvm]` 전역 설정만 둔다** — 게임은
+  `--path=/data/games/<id> <target>` 인자로 띄우므로 게임 섹션이 필요 없다(IDBFS에 캐시된 낡은 ini 문제를 원천 차단).
+  `savepath=/home/web_user/saves`, `aspect_ratio=false`, `stretch_mode=fit`
   → 캔버스 CSS 박스 = 320×200 선형 매핑(레이어 좌표는 `getBoundingClientRect()/320`).
 - 텍스트 파이프라인(패치 01, `engines/lure/webtext.{h,cpp}`):
   `Surface::writeSubstring` → `WebText::record`(표면 로컬 좌표, 글자색·배경 팔레트 인덱스, 폭px)
@@ -107,7 +109,7 @@ Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§9.
 - 스모크의 인트로 스킵 Escape가 인트로 종료 후 도달하면 인게임 종료 확인("Are you sure (y/n)?")이 뜬다 → 스모크가 `n`으로 닫음.
 - **캔버스 픽셀을 JS(`drawImage`/`getImageData`)로 읽으면 검은 화면이 나온다** — WebGL 드로잉 버퍼가 프레임 밖에서 비어 있다.
   간헐적으로 맞는 값이 섞여 나와 더 헷갈린다. 화면 검증은 스크린샷을 찍어 디코드할 것(`tools/lib/png.mjs`).
-- **`scummvm.ini`는 IDBFS에 한 번 저장되면 다시 fetch 하지 않는다** — ini에 게임 섹션을 추가해도 이미 플레이한 브라우저엔 반영 안 됨.
+- **`scummvm.ini`는 IDBFS에 한 번 저장되면 다시 fetch 하지 않는다** — 그래서 게임은 ini 섹션이 아니라 `--path=` 인자로 띄운다(26-09-09).
 - **브라우저 탭이 hidden이면 엔진이 1틱/초로 스로틀**(Asyncify sleep = setTimeout). 프리뷰 패널이 접혀 있거나 Chrome 창이 가려지면 멈춘 듯 보임.
   검증은 `tools/smoke.mjs`(헤드리스, `--disable-background-timer-throttling`)로.
 - build.sh는 시작 시 `git checkout -- . && git clean -fd engines backends dists`로 소스를 리셋 → 패치는 **먼저 .patch로 뽑고** 빌드.

@@ -1,12 +1,9 @@
-/** 셸 UI 문자열(게임 자막과 별개). 언어 토글 시 data-ui 속성을 가진 요소를 다시 채운다. */
+/** 셸 UI 문자열 — 게임과 무관한 것만. 게임별 문안(부제·조작 안내·고지 원작 문단)은 config.ts GameDef.text. */
 export const UI = {
   ko: {
     start: '게임 시작', preparing: '준비 중…', loadingEngine: '엔진 로딩 중…', loading: '불러오는 중…',
-    subtitle: '유혹의 마녀 · 1992 Revolution Software · 비공식 한글판',
     langBtn: '자막: 한국어', info: '정보 / 라이선스', hints: '💡 힌트',
     settings: '설정', touchMode: '터치 조작', touchTrackpad: '트랙패드(드래그로 커서)', touchDirect: '직접 탭', subtitles: '자막',
-    touchHelp: '길게 누르면 동작 메뉴 · 드래그해서 고르고 손을 떼면 실행',
-    pcHelp: '우클릭을 누른 채 위아래로 움직여 동작을 고르고 놓으면 실행 · 좌클릭 = 걷기/보기 · 선택지/팝업은 ↑↓ + Enter로도 선택 · Esc = 인트로 건너뛰기',
     controlsTitle: '조작법', choicesHint: '할 말을 골라 탭하세요',
     cloudLocal: '저장: 로컬', cloudIdle: '저장: 클라우드', cloudSyncing: '저장: 동기화 중', cloudError: '저장: 오류',
     rotate: '가로로 돌려 주세요', rotateSub: '이 게임은 가로 화면에 맞춰져 있습니다',
@@ -18,11 +15,8 @@ export const UI = {
   },
   en: {
     start: 'Start Game', preparing: 'Preparing…', loadingEngine: 'Loading engine…', loading: 'Loading…',
-    subtitle: 'Point-and-click classic · 1992 Revolution Software · unofficial Korean edition',
     langBtn: 'Subtitles: English', info: 'Info / License', hints: '💡 Hints',
     settings: 'Settings', touchMode: 'Touch control', touchTrackpad: 'Trackpad (drag cursor)', touchDirect: 'Direct tap', subtitles: 'Subtitles',
-    touchHelp: 'Long-press for the verb menu · drag to choose, release to act',
-    pcHelp: 'Hold the right mouse button and move up/down to pick an action, release to act · Left-click = walk/look · ↑↓ + Enter also picks choices/menu items · Esc = skip intro',
     controlsTitle: 'Controls', choicesHint: 'Tap a line to say it',
     cloudLocal: 'Save: local', cloudIdle: 'Save: cloud', cloudSyncing: 'Save: syncing', cloudError: 'Save: error',
     rotate: 'Please rotate your device', rotateSub: 'This game is designed for landscape',

@@ -1,17 +1,17 @@
-import { assetUrl, AD_PLACEMENT_HINTS } from '../config'
+import { assetUrl, GAME, gameKey, AD_PLACEMENT_HINTS } from '../config'
 import { playRewardedAd } from '../verse8/ads'
 import { ui } from '../i18n/ui'
 
 interface HintGroup { t: string; h: string[] }
 let data: { ko: HintGroup[]; en: HintGroup[] } | null = null
-const KEY = 'lure.hints.unlocked'
+const KEY = gameKey('hints.unlocked')
 const unlockedSet = (): Set<string> => { try { return new Set(JSON.parse(localStorage.getItem(KEY) ?? '[]')) } catch { return new Set() } }
 const unlock = (id: string) => { const u = unlockedSet(); u.add(id); localStorage.setItem(KEY, JSON.stringify([...u])) }
 
 /** 자발적(Opt-in) 광고 1편 = 힌트 1개 해금. 힌트는 우리가 쓴 공략 노트라 라이선스 3조(게임 유료화 금지)와 무관. */
 export async function openHints(lang: string) {
   const s = ui(lang)
-  if (!data) data = await fetch(assetUrl('games/lure/hints.json')).then(r => r.json())
+  if (!data) data = await fetch(assetUrl(`games/${GAME.id}/hints.json`)).then(r => r.json())
   const groups = lang === 'en' ? data!.en : data!.ko
   const wrap = document.createElement('div'); wrap.className = 'modal'
   const box = document.createElement('div'); box.className = 'modal-box'; wrap.appendChild(box)
