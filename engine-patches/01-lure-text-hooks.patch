@@ -18,6 +18,26 @@ index cb85286e..ae85f891 100644
  			// If time for next frame, allow everything to update
  			if (system.getMillis() > timerVal + GAME_FRAME_DELAY) {
  				timerVal = system.getMillis();
+diff --git a/engines/lure/menu.cpp b/engines/lure/menu.cpp
+index 1fbcec31..fdc8718a 100644
+--- a/engines/lure/menu.cpp
++++ b/engines/lure/menu.cpp
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include "lure/menu.h"
++#include "lure/webtext.h"
+ #include "lure/luredefs.h"
+ #include "lure/decode.h"
+ #include "lure/surface.h"
+@@ -479,6 +480,7 @@ Action PopupMenu::Show(int numEntries, Action *actions) {
+ }
+ 
+ uint16 PopupMenu::Show(int numEntries, const char *actions[]) {
++	WebText::PopupScope webPopupScope;
+ 	if (numEntries == 0) return 0xffff;
+ 	LureEngine &engine = LureEngine::getReference();
+ 	Events &e = Events::getReference();
 diff --git a/engines/lure/module.mk b/engines/lure/module.mk
 index 7aae9073..7d56d380 100644
 --- a/engines/lure/module.mk
@@ -179,7 +199,7 @@ index 88d9e348..9c20506e 100644
  
  } // namespace Lure
 diff --git a/engines/lure/surface.cpp b/engines/lure/surface.cpp
-index 8b664cbd..b9938ec2 100644
+index 8b664cbd..45344285 100644
 --- a/engines/lure/surface.cpp
 +++ b/engines/lure/surface.cpp
 @@ -28,6 +28,7 @@
@@ -253,12 +273,20 @@ index 8b664cbd..b9938ec2 100644
  	system.updateScreen();
  }
  
+@@ -956,6 +970,7 @@ void SaveRestoreDialog::toggleHightlight(int xs, int xe, int ys, int ye) {
+ }
+ 
+ bool SaveRestoreDialog::show(bool saveDialog) {
++	WebText::ModalScope webModalScope;
+ 	OSystem &system = *g_system;
+ 	Screen &screen = Screen::getReference();
+ 	Mouse &mouse = Mouse::getReference();
 diff --git a/engines/lure/webtext.cpp b/engines/lure/webtext.cpp
 new file mode 100644
-index 00000000..0b556172
+index 00000000..f8486ac5
 --- /dev/null
 +++ b/engines/lure/webtext.cpp
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,274 @@
 +/* scummvm-web-v8: see webtext.h. GPLv3, same as ScummVM. */
 +// emscripten.h uses libc symbols that ScummVM poisons via common/forbidden.h (same workaround as backends/platform/sdl/emscripten)
 +#define FORBIDDEN_SYMBOL_ALLOW_ALL
@@ -294,6 +322,9 @@ index 00000000..0b556172
 +static Common::Array<Rec> g_recs;     // records on surfaces
 +static Common::Array<Rec> g_screen;   // records on the real screen (screen coordinates)
 +static Common::String g_lastJson;
++static bool g_popupActive = false;
++static bool g_modalActive = false;
++static Common::String g_lastState;
 +
 +static bool intersects(const Rec &a, int x, int y, int w, int h) {
 +	return !(x >= a.x + a.w || x + w <= a.x || y >= a.y + a.h || y + h <= a.y);
@@ -471,8 +502,23 @@ index 00000000..0b556172
 +	res.getActiveHotspot(PLAYER_ID)->setRoomNumber(roomNumber);
 +}
 +
++void setPopupActive(bool active) { g_popupActive = active; }
++void setModalActive(bool active) { g_modalActive = active; }
++
++/** Publish UI state to the page (talk-choice list up / popup up / keyboard-owning modal up). */
++static void emitState() {
++	bool talkSelect = Resources::getReference().getTalkState() == TALK_SELECT;
++	Common::String state = Common::String::format("%d%d%d", talkSelect ? 1 : 0, g_popupActive ? 1 : 0, g_modalActive ? 1 : 0);
++	if (state == g_lastState)
++		return;
++	g_lastState = state;
++	EM_ASM({ Module['lureTalkSelect'] = $0; Module['lurePopup'] = $1; Module['lureModal'] = $2; },
++		talkSelect ? 1 : 0, g_popupActive ? 1 : 0, g_modalActive ? 1 : 0);
++}
++
 +void present(Surface *surface, int l, int t, int r, int b, int sx, int sy) {
 +	maybeDump();
++	emitState();
 +	for (uint i = 0; i < g_recs.size();) {
 +		if (g_recs[i].owner == surface && !stillVisible(surface, g_recs[i])) g_recs.remove_at(i); else ++i;
 +	}
@@ -508,6 +554,8 @@ index 00000000..0b556172
 +void forget(Surface *) {}
 +void notifyString(int, uint16, const char *, const char *, const char *) {}
 +void debugFrame() {}
++void setPopupActive(bool) {}
++void setModalActive(bool) {}
 +
 +#endif
 +
@@ -515,10 +563,10 @@ index 00000000..0b556172
 +} // namespace Lure
 diff --git a/engines/lure/webtext.h b/engines/lure/webtext.h
 new file mode 100644
-index 00000000..dec43f53
+index 00000000..085947a3
 --- /dev/null
 +++ b/engines/lure/webtext.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,45 @@
 +/* scummvm-web-v8: text records for the DOM subtitle layer (Emscripten only; no-ops elsewhere) */
 +#ifndef LURE_WEBTEXT_H
 +#define LURE_WEBTEXT_H
@@ -544,6 +592,21 @@ index 00000000..dec43f53
 +void notifyString(int table, uint16 localId, const char *text, const char *hotspotName, const char *characterName);
 +// Called once per game-loop iteration (Game::execute) — debug-only page hooks (room teleport) run here, like the debugger would.
 +void debugFrame();
++// UI state the page needs to know about, so keyboard helpers never fight the engine's own input:
++//   popup  — the verb/inventory popup menu is up (PopupMenu::Show)
++//   modal  — a dialog that reads the keyboard itself is up (save/restore: typing a save name)
++void setPopupActive(bool active);
++void setModalActive(bool active);
++
++/** Scope guard: marks the popup active for the lifetime of the block (Show() has many early returns). */
++struct PopupScope {
++	PopupScope() { setPopupActive(true); }
++	~PopupScope() { setPopupActive(false); }
++};
++struct ModalScope {
++	ModalScope() { setModalActive(true); }
++	~ModalScope() { setModalActive(false); }
++};
 +
 +} // namespace WebText
 +} // namespace Lure

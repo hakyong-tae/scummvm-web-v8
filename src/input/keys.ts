@@ -13,3 +13,10 @@ export function pressKey(canvas: HTMLElement, key: string) {
 export async function typeText(canvas: HTMLElement, text: string, gapMs = 40) {
   for (const ch of text.replace(/[^\x20-\x7e]/g, '')) { pressKey(canvas, ch); await new Promise(r => setTimeout(r, gapMs)) }
 }
+
+/** ↑↓ 선택 이동. 아직 아무것도 안 골랐으면(-1) 첫 항목(↓)/마지막 항목(↑)부터. 끝에서는 멈춘다. */
+export function nextChoiceIndex(current: number, dir: -1 | 1, count: number): number {
+  if (count <= 0) return -1
+  if (current < 0) return dir === 1 ? 0 : count - 1
+  return Math.min(Math.max(current + dir, 0), count - 1)
+}

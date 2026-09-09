@@ -9,7 +9,7 @@ import { playInterstitialAd } from './verse8/ads'
 import { SaveSyncController } from './save/syncController'
 import { openNotice } from './ui/notice'
 import { openHints } from './ui/hints'
-import { pressKey, typeText } from './input/keys'
+import { pressKey, typeText, nextChoiceIndex } from './input/keys'
 import { ui } from './i18n/ui'
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -65,12 +65,25 @@ kbdInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDe
 /** 대화 선택지(TALK_SELECT: 화면 x=0, y=8·16·…의 줄들, hotspots.cpp:3537)를 감지해 터치 기기에서 탭 가능한 버튼으로 강조 */
 const choicesEl = $('choices')
 let choicesKey = ''
+let talkChoiceLines: { y: number; t: string }[] = []   // PC 키보드 선택용
+let popupLines: number[] = []                            // 동작 팝업(x=12 줄들) 감지
+let choiceIdx = -1
+/** 엔진이 알려주는 UI 상태(webtext.cpp emitState). 세이브 창처럼 엔진이 키보드를 쓰는 동안은 우리가 끼어들지 않는다. */
+const engineState = () => {
+  const M = (window.Module ?? {}) as Record<string, unknown>
+  return { talkSelect: M.lureTalkSelect === 1, popup: M.lurePopup === 1, modal: M.lureModal === 1 }
+}
 function watchTalkChoices(recs: { x: number; y: number; w: number; h: number; t: string }[]) {
-  if (!coarse) return
+  const st = engineState()
+  popupLines = st.popup ? recs.filter(r => r.x === 12 && r.w > 0).map(r => r.y) : []
   const head = recs.find(r => r.x === 0 && r.y === 0)
   const lines = recs.filter(r => r.x === 0 && r.y >= 8 && r.y <= 40 && r.y % 8 === 0 && r.w > 0).sort((a, b) => a.y - b.y)
-  const isTalk = !!head && /^(Talk to|Ask|Tell)\b/.test(head.t) && lines.length > 0
+  const isTalk = st.talkSelect && !!head && /^(Talk to|Ask|Tell)\b/.test(head.t) && lines.length > 0
   const key = isTalk ? lines.map(l => `${l.y}:${l.t}`).join('|') : ''
+  const nextLines = isTalk ? lines.map(l => ({ y: l.y, t: l.t })) : []
+  if (nextLines.length !== talkChoiceLines.length) choiceIdx = -1
+  talkChoiceLines = nextLines
+  if (!coarse) return
   if (key === choicesKey) return
   choicesKey = key
   choicesEl.innerHTML = ''
@@ -91,6 +104,32 @@ function watchTalkChoices(recs: { x: number; y: number; w: number; h: number; t:
     setTimeout(() => { t.hidden = true; localStorage.setItem('lure.toast.choices', '1') }, 6000)
   }
 }
+// PC 키보드: 대화 선택지는 엔진이 마우스 y로 고르므로 ↑↓를 합성 포인터 이동으로, 동작 팝업은 휠 이벤트로 바꾼다. Enter = 합성 좌클릭.
+let lastMouse = { x: 0, y: 0 }
+addEventListener('pointermove', e => { if (e.isTrusted && e.pointerType === 'mouse') lastMouse = { x: e.clientX, y: e.clientY } })
+function pointerTo(clientX: number, clientY: number) {
+  canvas.dispatchEvent(new PointerEvent('pointermove', { clientX, clientY, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true }))
+}
+document.addEventListener('keydown', (e) => {
+  if (coarse || startEl.hidden === false) return
+  if ((e.target as HTMLElement | null)?.tagName === 'INPUT') return
+  if (engineState().modal) return       // 세이브 이름 입력 등 엔진이 키보드를 쓰는 중
+  const dir = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
+  const rect = canvas.getBoundingClientRect(); const sx = rect.width / 320, sy = rect.height / 200
+  if (talkChoiceLines.length) {
+    if (dir) {
+      choiceIdx = nextChoiceIndex(choiceIdx, dir as -1 | 1, talkChoiceLines.length)
+      pointerTo(rect.left + 40 * sx, rect.top + (talkChoiceLines[choiceIdx].y + 4) * sy); e.preventDefault()
+    } else if (e.key === 'Enter') {
+      if (choiceIdx < 0) choiceIdx = 0
+      void clickAtCss(canvas, rect.left + 40 * sx, rect.top + (talkChoiceLines[choiceIdx].y + 4) * sy); e.preventDefault()
+    }
+  } else if (popupLines.length) {
+    if (dir) {
+      canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: dir * 100, deltaMode: 0, clientX: lastMouse.x, clientY: lastMouse.y, bubbles: true, cancelable: true })); e.preventDefault()
+    } else if (e.key === 'Enter') { void clickAtCss(canvas, lastMouse.x, lastMouse.y); e.preventDefault() }
+  }
+})
 /** 엔진 텍스트에서 y/n 확인창을 감지해 터치 버튼 표시(터치 기기만) */
 function watchConfirm(recs: { t: string }[]) {
   if (!coarse) return
