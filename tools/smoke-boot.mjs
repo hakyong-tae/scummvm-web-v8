@@ -1,6 +1,7 @@
 // 게임 무관 헤드리스 부팅 스모크: 부팅 → 엔진 기동 → 화면 렌더 확인 → 키 입력 → 스크린샷
-//   node tools/smoke-boot.mjs --game=soltys [--keys=Escape,Escape] [--clicks=250,120] [--secs=25] [baseUrl]
-//   --clicks 는 320x200 게임 좌표(캔버스 박스에 선형 매핑)
+//   node tools/smoke-boot.mjs --game=soltys [--secs=25] [--steps=...] [baseUrl]
+//   --steps 는 ';' 로 구분한 순서 있는 동작: key:Escape · move:x,y · click:x,y · rclick:x,y · wait:3 · shot:이름
+//   좌표는 320x200 게임 좌표(캔버스 박스에 선형 매핑)
 // 판정: (1) "Running …" 로그 (2) 캔버스 영역 스크린샷이 단색이 아님(고유색 ≥ 8) (3) pageerror 0
 // 주의: 캔버스를 drawImage/getImageData로 읽으면 WebGL 드로잉 버퍼가 프레임 밖에서 비어 항상 검게 나온다 → 스크린샷을 디코드한다.
 import { createRequire } from 'node:module'
@@ -12,8 +13,7 @@ const puppeteer = require('puppeteer')
 const arg = (n, d) => { const a = process.argv.find(x => x.startsWith(`--${n}=`)); return a ? a.slice(n.length + 3) : d }
 const game = arg('game', 'lure')
 const secs = Number(arg('secs', '25'))
-const keys = arg('keys', '') ? arg('keys', '').split(',') : []
-const clicks = arg('clicks', '') ? arg('clicks', '').split(';').map(p => p.split(',').map(Number)) : []
+const steps = arg('steps', '') ? arg('steps', '').split(';').filter(Boolean) : []
 const base = process.argv.filter(a => !a.startsWith('--'))[2] || 'http://localhost:3046/'
 const outDir = new URL('../docs/superpowers/plans/shots/', import.meta.url).pathname
 mkdirSync(outDir, { recursive: true })
@@ -41,10 +41,13 @@ console.log(`engine running after ${Date.now() - t0}ms:`, running ?? '(NOT SEEN)
 const shot = async (name) => {
   const box = await (await page.$('#canvas')).boundingBox()
   const clip = { x: Math.round(box.x), y: Math.round(box.y), width: Math.round(box.width), height: Math.round(box.height) }
+  const recs = await page.evaluate(() => (window.__lureText || []).map(r => `${r.t}@${r.x},${r.y}`))
+  const spans = await page.evaluate(() => [...document.querySelectorAll('#textlayer span')].map(d => d.textContent))
+  const koDivs = await page.evaluate(() => [...document.querySelectorAll('#textlayer .ko')].map(d => d.textContent))
   const buf = await page.screenshot({ clip })
   const path = `${outDir}s1-${game}-${name}.png`
   writeFileSync(path, buf)
-  return { ...imageStats(decodePng(buf)), path }
+  return { ...imageStats(decodePng(buf)), recs, spans, koDivs, path }
 }
 
 const shots = []
@@ -53,19 +56,24 @@ for (let i = 1; i <= Math.ceil(secs / 5); i++) {
   const s = await shot(`t${i * 5}s`); shots.push(s)
   console.log(`t+${i * 5}s`, JSON.stringify(s))
 }
-for (const k of keys) { await page.keyboard.press(k); await sleep(3000) }
-if (keys.length) {
-  const s = await shot('keys'); shots.push(s)
-  console.log(`after keys ${keys.join(',')}`, JSON.stringify(s))
+// 순서 있는 동작 실행
+const gxy = async () => {
+  const b = await (await page.$('#canvas')).boundingBox()
+  return [x => b.x + x * b.width / 320, y => b.y + y * b.height / 200]
 }
-if (clicks.length) {
-  const box = await (await page.$('#canvas')).boundingBox()
-  for (const [x, y] of clicks) {
-    await page.mouse.click(box.x + x * box.width / 320, box.y + y * box.height / 200)
-    await sleep(4000)
-  }
-  const s = await shot('clicks'); shots.push(s)
-  console.log(`after clicks ${JSON.stringify(clicks)}`, JSON.stringify(s))
+for (const [i, step] of steps.entries()) {
+  const [op, val = ''] = step.split(':')
+  const [gx, gy] = await gxy()
+  const [x, y] = val.split(',').map(Number)
+  if (op === 'key') { await page.keyboard.press(val); await sleep(2500) }
+  else if (op === 'move') { await page.mouse.move(gx(x), gy(y)); await sleep(2000) }
+  else if (op === 'click') { await page.mouse.click(gx(x), gy(y)); await sleep(3000) }
+  else if (op === 'rclick') { await page.mouse.click(gx(x), gy(y), { button: 'right' }); await sleep(3000) }
+  else if (op === 'wait') { await sleep(Number(val) * 1000) }
+  else if (op === 'shot') { /* fall through to the shot below */ }
+  else { console.log('unknown step', step); process.exitCode = 1 }
+  const s = await shot(op === 'shot' ? val : `step${i + 1}-${op}`); shots.push(s)
+  console.log(`step ${i + 1} ${step}`, JSON.stringify({ recs: s.recs, spans: s.spans, koDivs: s.koDivs, colors: s.colors }))
 }
 const best = shots.reduce((a, b) => (b.colors > a.colors ? b : a), shots[0] ?? { colors: 0 })
 const ok = !!running && best.colors >= 8 && errors.length === 0

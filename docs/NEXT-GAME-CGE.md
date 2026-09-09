@@ -2,7 +2,7 @@
 
 Lure of the Temptress 웹판(이 레포)에 이어 같은 방식으로 올릴 다음 후보 두 개의 **사전 검증 결과와 작업 계획**.
 작성 2026-09-09. 검증은 라이선스 원문·ScummVM 소스 실물 확인까지 마쳤다.
-**2026-09-09 갱신: Soltys는 S1(빌드·부팅) 완료** — 아래 §7 참조. Sfinx(cge2)는 아직 사전 조사 상태.
+**2026-09-09 갱신: Soltys는 S1(빌드·부팅)·S2(훅+영문 패스스루) 완료** — 아래 §7·§8 참조. Sfinx(cge2)는 아직 사전 조사 상태.
 
 ---
 
@@ -85,8 +85,8 @@ CGE는 텍스트를 **스프라이트 비트맵 안에** 그리고, 그 스프�
 |---|---|---|---|
 | S0 | 라이선스 재확인(sha256), `tools/fetch-game.sh` 일반화, 영문판 출처 확인(Sfinx만) | 아카이브 검증 통과 | ✅ Soltys 완료 / Sfinx 미착수 |
 | S1 | `--enable-engine=cge` 빌드 + 브라우저 부팅(영문) | 인트로~첫 화면 플레이 | ✅ **완료(§7)** |
-| S2 | 훅 4개 + DOM 레이어를 **영문 패스스루**로 | 원본과 시각적 동등 | 다음 |
-| S3 | 문자열 전수 덤프 → 용어집 → ko.json → i18n-check | 초반 구간 한글 완주 | |
+| S2 | 훅 4개 + DOM 레이어를 **영문 패스스루**로 | 원본과 시각적 동등 | ✅ **완료(§8)** |
+| S3 | 문자열 전수 덤프 → 용어집 → ko.json → i18n-check | 초반 구간 한글 완주 | 덤프는 S2에서 완료(327문장) → 다음 |
 | S4 | 셸 일반화(게임 선택), 터치·키보드·세이브·광고·고지 배선 | 폰 완주, 기기 간 이어하기 | 골격만 S1에서 선행 |
 | S5 | `prepare-deploy.sh soltys` → 하위경로 스모크 → V8 push | 프리뷰 동작 | |
 
@@ -97,9 +97,9 @@ Sfinx는 S1·S2를 Soltys 훅에서 거의 복사할 수 있으므로 **Soltys�
 ## 5. 리스크와 미검증 항목
 
 - ~~**미검증**: `cge`/`cge2` 엔진의 Emscripten 빌드 실적이 없다.~~ → **해소**: cge는 무수정으로 빌드·부팅·플레이됐다(§7). cge2(Sfinx)는 여전히 미검증이나 같은 계열이라 위험도는 낮아졌다.
-- **미검증**: `Text::_cache` 순회 덤프는 소스를 읽고 설계했을 뿐 실행해 보지 않았다.
-- **미검증**: 상태줄(`InfoLine`)이 Lure처럼 "동사 + 이름" 문자열 연결인지, 완성된 문장인지. 전자면 `status.ts`류 합성기가 또 필요하다.
-- **번역량 미상**: Lure는 1,804문장이었다. CGE 텍스트 파일 규모는 덤프 전까지 모른다.
+- ~~**미검증**: `Text::_cache` 순회 덤프~~ → **해소**: `Text::webDump()`로 327 ref / 12,886자 덤프 성공(§8).
+- ~~**미검증**: 상태줄(`InfoLine`)이 …~~ → **해소**: CGE 상태줄은 합성 문장이 아니라 **스프라이트 이름 하나**("A kennel")다. `status.ts`류 합성기 불필요. 대신 이름들이 SAY 파일이 아니라 스프라이트 데이터에 있어 덤프로 열거되지 않는다(§8).
+- ~~**번역량 미상**~~ → **확정**: CGE.SAY = **327문장 / 12,886자**(Lure 1,804문장의 약 1/5). 여기에 스프라이트 이름(핫스팟 라벨)이 별도로 붙는다.
 - **Sfinx 34MB**: Lure(8MB)보다 4배라 초기 로딩과 배포본 크기를 봐야 한다. 엔진 산출물까지 합치면 V8 레포가 50MB를 넘을 수 있다.
 - **폴란드어 원본**: 두 게임 다 폴란드 게임이라 영문판이 이미 번역본이다. 한글은 영문 경유 중역이 된다.
 
@@ -151,3 +151,53 @@ Sfinx는 S1·S2를 Soltys 훅에서 거의 복사할 수 있으므로 **Soltys�
 ### S2 착수 전 확인된 사실
 훅 4곳이 문서와 같은 위치에 실재한다(v2026.3.0): `Text::getText` `text.cpp:123` · `Talk::update` `talk.cpp:98` ·
 `InfoLine::update` `talk.cpp:214` · `Sprite::show` `vga13h.cpp:429`. (문서의 Talk::update ~128은 98이 정확한 값.)
+
+
+---
+
+## 8. S2 결과 (2026-09-09) — 훅 4개 + DOM 레이어 영문 패스스루 완료
+
+`engine-patches/06-cge-text-hooks.patch`(신규, GPLv3). **셸(`src/`)은 한 줄도 안 고쳤다** — CGE가 Lure와 같은 레코드 JSON을 내보내므로 `text/layer.ts`·`blocks.ts`·`diff.ts`가 그대로 동작한다.
+
+### 훅 설계 — Lure보다 단순하다
+CGE는 텍스트를 스프라이트 비트맵에 그리고 나중에 블릿하므로 **내용과 위치가 분리**된다(§2). 그래서:
+
+| 지점 | 하는 일 |
+|---|---|
+| `Talk::update(text)` | 이 Talk 스프라이트가 무엇을 그렸는지 기록. `\|`·`\n`으로 줄을 쪼개고 엔진과 **같은 규칙**으로 줄 폭을 잰다(넓은 space는 2px 덜 전진) |
+| `InfoLine::update(text)` | 상태줄 — 여백 0의 한 줄 |
+| `Sprite::show()` | 이 프레임에 (x,y)로 블릿된 스프라이트면 줄들을 화면 좌표로 옮겨 프레임 목록에 적재 |
+| `Vga::update()` | `copyRectToScreen` 직후 프레임 목록을 JSON으로 `Module.onLureText`에 방출하고 비운다 |
+| `Text::getText(ref)` | `Module.onLureString(0, ref, 영문, "", "")` — 번역 키가 **ref 정수**라 Lure의 테이블/로컬 2단 키가 필요 없다 |
+| `~Sprite()` | 기록 제거 |
+
+Lure가 필요로 했던 표면 추적·`transfer`·"글자색 픽셀 4개 미만이면 사라진 것" 판정이 **전부 불필요**하다.
+프레임마다 목록을 새로 만들기 때문에, 말풍선이 사라지면 그냥 다음 프레임 목록에 없다.
+`Vga::update()`는 `Vga::show()`에서만 호출되므로(확인함) 스프라이트 순회 직후 정확히 한 번 방출된다.
+
+색은 `g_system->getPaletteManager()->grabPalette()`로 실제 화면 팔레트에서 읽는다(CGE 내부 `_sysPal`/`_newColors` 대신).
+
+### 검증 (`tools/smoke-boot.mjs --steps=...`)
+| 텍스트 면 | 확인된 레코드 |
+|---|---|
+| 말풍선(Talk) | `Don't come back without Leon, you bumbler!@6,40` |
+| 상태줄(InfoLine) | `A kennel@177,164` · `A bone@177,164` · `Chief@177,164` — 좌표가 `kInfoX,kInfoY`(177,164)와 정확히 일치 |
+| 메뉴(Vmenu) | `I've had enough of this game!@103,91` · `Whoops! I want to continue!@103,101` — 줄 간격 10px = `kFontHigh+kTextLineSpace` |
+| `getText` | ref 1005·200·201·202·102 등 (ref, 영문) 쌍 도착 |
+
+스크린샷 `shots/s2-soltys-{balloon,infoline,menu}.png` — DOM span이 엔진 글리프를 덮고 같은 자리에 그려진다. 메뉴 선택 강조바(MenuBar)는 별도 스프라이트라 그대로 보인다.
+Lure 회귀 스모크 전 항목 통과, vitest 62개 통과.
+
+### S3에 넘길 사실
+- **번역량 = CGE.SAY 327문장 / 12,886자** (`games/soltys/strings.en.json`, `npm run strings:dump -- --game=soltys`). Lure(1,804)의 약 1/5.
+  ref는 장면별로 흩어져 있다(1000번대=농가, …, 26000번대=결혼식, 28000번대=발단).
+- **스프라이트 이름은 SAY에 없다.** 상태줄에 뜨는 "A kennel"·"A bone"·"Chief"는 스프라이트 데이터에서 오므로 덤프로 열거되지 않는다.
+  → 런타임에 `InfoLine::update`로 들어오는 영문 이름을 사전으로 치환하는 방식(Lure의 KoDict와 같은 형태)이 필요하고, 목록은 플레이하며 수집해야 한다.
+- **ref 10~17은 번역 대상이 아니다.** CP437 박스문자로 그린 DOS 타이틀 아트("ÚÄ¿…")와 크레딧이다. 일반 플레이 흐름에서는 화면에 안 나온다(인트로 40초 관찰 중 레코드 0건).
+- ref 17 = `Translation by|Janusz Wiśniewski (original author)|Dan Serba` — **영문판은 원작자 본인이 참여한 공식 영문화**다. Sfinx 영문판 출처 확인(§1 ⚠️)에도 참고가 된다.
+
+### 함정
+- **새 파일을 `git add -N` 한 채로 두면 build.sh가 깨진다.** `git clean`이 인덱스에 올라간 파일을 지우지 못해
+  `error: engines/cge/webtext.cpp: already exists in working directory`가 난다. 패치를 뽑은 뒤 반드시 `git reset <새 파일>`.
+- 콜백 이름은 **`onLureText`/`onLureString`/`onLureDump`를 그대로 쓴다.** 이제 Lure 전용이 아니라 **셸 전체의 이름**이다
+  (패치 02~05와 `src/`를 손대지 않기 위한 선택). Sfinx까지 붙일 때 한 번에 `onEngineText` 등으로 바꾸는 편이 낫다.

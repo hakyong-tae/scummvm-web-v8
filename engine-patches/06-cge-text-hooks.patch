@@ -1,0 +1,391 @@
+diff --git a/engines/cge/module.mk b/engines/cge/module.mk
+index 6e920349..29ea5a21 100644
+--- a/engines/cge/module.mk
++++ b/engines/cge/module.mk
+@@ -15,7 +15,8 @@ MODULE_OBJS := \
+ 	text.o \
+ 	vga13h.o \
+ 	vmenu.o \
+-	walk.o
++	walk.o \
++	webtext.o
+ 
+ MODULE_DIRS += \
+ 	engines/cge
+diff --git a/engines/cge/talk.cpp b/engines/cge/talk.cpp
+index 8e314f25..c0d29d39 100644
+--- a/engines/cge/talk.cpp
++++ b/engines/cge/talk.cpp
+@@ -26,6 +26,7 @@
+ 
+ #include "cge/general.h"
+ #include "cge/talk.h"
++#include "cge/webtext.h"
+ #include "cge/game.h"
+ #include "cge/events.h"
+ #include "cge/cge_main.h"
+@@ -97,6 +98,7 @@ void Talk::textToSpeech(const char *text) {
+ 
+ void Talk::update(const char *text) {
+ 	textToSpeech(text);
++	WebText::setTalkText(this, text, (int)_mode, _wideSpace, _vm->_font);
+ 
+ 	const uint16 vmarg = (_mode) ? kTextVMargin : 0;
+ 	const uint16 hmarg = (_mode) ? kTextHMargin : 0;
+@@ -218,6 +220,7 @@ void InfoLine::update(const char *text) {
+ 	_oldText = text;
+ 
+ 	textToSpeech(text);
++	WebText::setInfoText(this, text, _wideSpace, _vm->_font);
+ 
+ 	uint16 w = _ts[0]->_w;
+ 	uint16 h = _ts[0]->_h;
+diff --git a/engines/cge/text.cpp b/engines/cge/text.cpp
+index f40912a0..990d402b 100644
+--- a/engines/cge/text.cpp
++++ b/engines/cge/text.cpp
+@@ -26,6 +26,7 @@
+ 
+ #include "cge/general.h"
+ #include "cge/text.h"
++#include "cge/webtext.h"
+ #include "cge/talk.h"
+ #include "cge/game.h"
+ #include "cge/snail.h"
+@@ -125,8 +126,10 @@ char *Text::getText(int ref) {
+ 	for (i = 0; (i < _size) && (_cache[i]._ref != ref); i++)
+ 		;
+ 
+-	if (i < _size)
++	if (i < _size) {
++		WebText::notifyText(ref, _cache[i]._text);
+ 		return _cache[i]._text;
++	}
+ 
+ 	warning("getText: Unable to find ref %d", ref);
+ 	return nullptr;
+diff --git a/engines/cge/text.h b/engines/cge/text.h
+index 24a7cfbe..60f85c49 100644
+--- a/engines/cge/text.h
++++ b/engines/cge/text.h
+@@ -54,6 +54,7 @@ public:
+ 	~Text();
+ 	void clear();
+ 	char *getText(int ref);
++	void webDump();   // scummvm-web-v8: dump the whole SAY table to the page
+ 	void say(const char *text, Sprite *spr);
+ 	void sayTime(Sprite *spr);
+ private:
+diff --git a/engines/cge/vga13h.cpp b/engines/cge/vga13h.cpp
+index 05a40b5e..cb40cf94 100644
+--- a/engines/cge/vga13h.cpp
++++ b/engines/cge/vga13h.cpp
+@@ -30,6 +30,7 @@
+ #include "graphics/paletteman.h"
+ #include "cge/general.h"
+ #include "cge/vga13h.h"
++#include "cge/webtext.h"
+ #include "cge/bitmap.h"
+ #include "cge/text.h"
+ #include "cge/cge_main.h"
+@@ -72,6 +73,7 @@ Sprite::Sprite(CGEEngine *vm, BitmapPtr *shpP)
+ }
+ 
+ Sprite::~Sprite() {
++	WebText::forget(this);
+ 	if (_vm->_sprite == this)
+ 		_vm->_sprite = nullptr;
+ 
+@@ -441,6 +443,7 @@ void Sprite::show() {
+ 		else
+ 			e->_b1->show(e->_x1, e->_y1);
+ 	}
++	WebText::showSprite(this, _x, _y, _flags._hide);
+ }
+ 
+ void Sprite::show(uint16 pg) {
+@@ -834,6 +837,7 @@ void Vga::update() {
+ 	}
+ 
+ 	g_system->copyRectToScreen(Vga::_page[0]->getPixels(), kScrWidth, 0, 0, kScrWidth, kScrHeight);
++	WebText::frame(_vm);
+ 	g_system->updateScreen();
+ }
+ 
+diff --git a/engines/cge/webtext.cpp b/engines/cge/webtext.cpp
+new file mode 100644
+index 00000000..d62c6be2
+--- /dev/null
++++ b/engines/cge/webtext.cpp
+@@ -0,0 +1,232 @@
++/* scummvm-web-v8: see webtext.h. GPLv3, same as ScummVM. */
++// emscripten.h uses libc symbols that ScummVM poisons via common/forbidden.h
++// (same workaround as backends/platform/sdl/emscripten)
++#define FORBIDDEN_SYMBOL_ALLOW_ALL
++#include "cge/webtext.h"
++#include "cge/cge.h"
++#include "cge/talk.h"
++#include "cge/text.h"
++#include "cge/vga13h.h"
++#include "common/array.h"
++#include "common/str.h"
++#include "common/system.h"
++#include "graphics/paletteman.h"
++
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++#endif
++
++namespace CGE {
++namespace WebText {
++
++#ifdef __EMSCRIPTEN__
++
++// One rendered line inside a sprite's bitmap, in bitmap-local coordinates.
++struct Line {
++	int dx, dy, w;
++	Common::String text;
++};
++
++struct Entry {
++	Sprite *spr;
++	Common::Array<Line> lines;
++};
++
++static Common::Array<Entry> g_entries;   // text known to live in a sprite's bitmap
++static Common::Array<Line> g_frame;      // this frame's on-screen records (dx/dy hold screen x/y)
++static Common::String g_lastJson;
++
++static Entry *find(Sprite *spr) {
++	for (uint i = 0; i < g_entries.size(); ++i)
++		if (g_entries[i].spr == spr)
++			return &g_entries[i];
++	return nullptr;
++}
++
++static Entry &slot(Sprite *spr) {
++	if (Entry *e = find(spr)) {
++		e->lines.clear();
++		return *e;
++	}
++	Entry e;
++	e.spr = spr;
++	g_entries.push_back(e);
++	return g_entries[g_entries.size() - 1];
++}
++
++// Same advance rule as Talk::update()/InfoLine::update(): a wide space is drawn from column 2,
++// so it also advances two pixels less.
++static int lineWidth(Font *font, const char *s, int len, bool wideSpace) {
++	int k = 0;
++	for (int i = 0; i < len; ++i) {
++		uint8 c = (uint8)s[i];
++		int cw = font->_widthArr[c];
++		if (c == 0x20 && cw > 4 && !wideSpace)
++			cw -= 2;
++		k += cw;
++	}
++	return k;
++}
++
++void setTalkText(Sprite *spr, const char *text, int mode, bool wideSpace, Font *font) {
++	if (!spr || !font)
++		return;
++	Entry &e = slot(spr);
++	if (!text)
++		return;
++	const int vmarg = mode ? kTextVMargin : 0;
++	const int hmarg = mode ? kTextHMargin : 0;
++	int dy = vmarg;
++	const char *start = text;
++	for (const char *p = text;; ++p) {
++		if (*p == '|' || *p == '\n' || *p == '\0') {
++			int len = (int)(p - start);
++			if (len > 0) {
++				Line ln;
++				ln.dx = hmarg;
++				ln.dy = dy;
++				ln.w = lineWidth(font, start, len, wideSpace);
++				ln.text = Common::String(start, len);
++				e.lines.push_back(ln);
++			}
++			if (*p == '\0')
++				break;
++			dy += kFontHigh + kTextLineSpace;
++			start = p + 1;
++		}
++	}
++}
++
++void setInfoText(Sprite *spr, const char *text, bool wideSpace, Font *font) {
++	if (!spr || !font)
++		return;
++	Entry &e = slot(spr);
++	if (!text || !*text)
++		return;
++	Line ln;
++	ln.dx = 0;
++	ln.dy = 0;
++	ln.w = lineWidth(font, text, (int)strlen(text), wideSpace);
++	ln.text = Common::String(text);
++	e.lines.push_back(ln);
++}
++
++void forget(Sprite *spr) {
++	for (uint i = 0; i < g_entries.size();) {
++		if (g_entries[i].spr == spr)
++			g_entries.remove_at(i);
++		else
++			++i;
++	}
++}
++
++void showSprite(Sprite *spr, int x, int y, bool hidden) {
++	if (hidden)
++		return;
++	Entry *e = find(spr);
++	if (!e)
++		return;
++	for (uint i = 0; i < e->lines.size(); ++i) {
++		Line r = e->lines[i];
++		r.dx += x;
++		r.dy += y;
++		g_frame.push_back(r);
++	}
++}
++
++static void appendJsonString(Common::String &out, const Common::String &s) {
++	out += '"';
++	for (uint i = 0; i < s.size(); ++i) {
++		uint8 c = (uint8)s[i];
++		if (c == '"' || c == '\\') { out += '\\'; out += (char)c; }
++		else if (c == '\n') { out += "\\n"; }
++		else if (c < 0x20) { out += ' '; }
++		else if (c < 0x80) { out += (char)c; }
++		else { out += (char)(0xC0 | (c >> 6)); out += (char)(0x80 | (c & 0x3F)); }  // Latin-1 -> UTF-8
++	}
++	out += '"';
++}
++
++static void appendRgb(Common::String &out, const byte *pal, uint8 idx) {
++	const byte *p = pal + idx * 3;
++	out += Common::String::format("[%d,%d,%d]", p[0], p[1], p[2]);
++}
++
++// The page asked for the whole SAY table (JS cannot call into wasm while Asyncify is suspended, so we poll).
++static void maybeDump(CGEEngine *vm) {
++	if (!EM_ASM_INT({ return Module['lureDumpRequest'] ? 1 : 0; }))
++		return;
++	EM_ASM({ Module['lureDumpRequest'] = 0; });
++	if (vm && vm->_text)
++		vm->_text->webDump();
++}
++
++void frame(CGEEngine *vm) {
++	maybeDump(vm);
++
++	Common::String json = "[";
++	byte pal[256 * 3];
++	g_system->getPaletteManager()->grabPalette(pal, 0, 256);
++	for (uint i = 0; i < g_frame.size(); ++i) {
++		const Line &r = g_frame[i];
++		if (i) json += ',';
++		json += Common::String::format("{\"x\":%d,\"y\":%d,\"w\":%d,\"h\":%d,\"t\":", r.dx, r.dy, r.w, kFontHigh);
++		appendJsonString(json, r.text);
++		json += ",\"c\":"; appendRgb(json, pal, kTextColFG);
++		json += ",\"b\":"; appendRgb(json, pal, kTextColBG);
++		json += '}';
++	}
++	json += ']';
++	g_frame.clear();
++
++	if (json == g_lastJson)
++		return;
++	g_lastJson = json;
++	EM_ASM({ if (Module['onLureText']) Module['onLureText'](UTF8ToString($0)); }, json.c_str());
++}
++
++void notifyText(int ref, const char *text) {
++	if (!text)
++		return;
++	Common::String q;
++	appendJsonString(q, Common::String(text));
++	Common::String utf8(q.c_str() + 1, q.size() - 2);   // strip the quotes appendJsonString added
++	EM_ASM({ if (Module['onLureString']) Module['onLureString'](0, $0, UTF8ToString($1), "", ""); },
++		ref, utf8.c_str());
++}
++
++#else // !__EMSCRIPTEN__
++
++void setTalkText(Sprite *, const char *, int, bool, Font *) {}
++void setInfoText(Sprite *, const char *, bool, Font *) {}
++void forget(Sprite *) {}
++void showSprite(Sprite *, int, int, bool) {}
++void frame(CGEEngine *) {}
++void notifyText(int, const char *) {}
++
++#endif
++
++} // namespace WebText
++
++#ifdef __EMSCRIPTEN__
++/** Dump every (ref, text) pair in the loaded SAY table to the page. Defined here so the hook stays
++    in one file; Text::_cache is private, hence a member function. */
++void Text::webDump() {
++	Common::String json = "{\"say\":{";
++	bool first = true;
++	for (int i = 0; i < _size; ++i) {
++		if (!_cache[i]._ref || !_cache[i]._text)
++			continue;
++		if (!first) json += ',';
++		first = false;
++		json += Common::String::format("\"%d\":", _cache[i]._ref);
++		WebText::appendJsonString(json, Common::String(_cache[i]._text));
++	}
++	json += "}}";
++	EM_ASM({ if (Module['onLureDump']) Module['onLureDump'](UTF8ToString($0)); }, json.c_str());
++}
++#else
++void Text::webDump() {}
++#endif
++
++} // End of namespace CGE
+diff --git a/engines/cge/webtext.h b/engines/cge/webtext.h
+new file mode 100644
+index 00000000..b6933a68
+--- /dev/null
++++ b/engines/cge/webtext.h
+@@ -0,0 +1,33 @@
++/* scummvm-web-v8: text records for the DOM subtitle layer (Emscripten only; no-ops elsewhere).
++   CGE draws text into a sprite bitmap and blits that sprite later, so content and position arrive
++   separately: Talk/InfoLine::update tells us WHAT, Sprite::show tells us WHERE. */
++#ifndef CGE_WEBTEXT_H
++#define CGE_WEBTEXT_H
++
++#include "common/scummsys.h"
++
++namespace CGE {
++
++class Sprite;
++class Font;
++class CGEEngine;
++
++namespace WebText {
++
++// Talk::update() rendered `text` (with '|' / '\n' line breaks) into this sprite's bitmap.
++void setTalkText(Sprite *spr, const char *text, int mode, bool wideSpace, Font *font);
++// InfoLine::update() rendered a single unmargined line into this sprite's bitmap (nullptr = cleared).
++void setInfoText(Sprite *spr, const char *text, bool wideSpace, Font *font);
++// Sprite is going away.
++void forget(Sprite *spr);
++// Sprite::show() blitted this sprite at (x, y) this frame.
++void showSprite(Sprite *spr, int x, int y, bool hidden);
++// Vga::update() pushed the finished frame to the screen: publish what is visible.
++void frame(CGEEngine *vm);
++// Text::getText(ref) resolved to `text` — ref is the translation key (SAY file line number).
++void notifyText(int ref, const char *text);
++
++} // namespace WebText
++} // End of namespace CGE
++
++#endif
