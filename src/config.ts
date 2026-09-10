@@ -68,14 +68,14 @@ export const GAMES: Record<string, GameDef> = {
     text: {
       ko: {
         subtitle: '솔티스 · 1995 L.K. Avalon · 비공식 한글판',
-        touchHelp: '탭 = 걷기·살펴보기 · 길게 누르기 = 사용·집기 · 아래 칸은 소지품·설정·종료',
-        pcHelp: '좌클릭 = 걷기·살펴보기 · 우클릭 = 사용·집기 · 화면 아래 칸 = 소지품·설정·종료 · Esc = 인트로 건너뛰기',
+        touchHelp: '탭 = 걷기·살펴보기 · 길게 누르기 = 사용·집기 · 우측 상단 Esc = 인트로 건너뛰기 · 하단 가운데(♪) 길게 누르면 저장/불러오기',
+        pcHelp: '좌클릭 = 걷기·살펴보기 · 우클릭 = 사용·집기 · Esc = 인트로 건너뛰기 · F5 또는 하단 가운데(♪) 아이콘 우클릭 = 저장/불러오기',
         origin: 'Sołtys © 1995 Laboratorium Komputerowe Avalon — 저작권자가 2011년 프리웨어로 공개한 게임입니다. 영문판은 원작자 Janusz Wiśniewski가 참여한 공식 영문화(v1.0)이며, 한글 자막은 그 영문판을 옮긴 것입니다.',
       },
       en: {
         subtitle: 'Polish point-and-click comedy · 1995 L.K. Avalon · unofficial Korean edition',
-        touchHelp: 'Tap = walk/look · long-press = use/take · the bottom panel holds inventory, settings and exit',
-        pcHelp: 'Left-click = walk/look · right-click = use/take · the bottom panel holds inventory, settings and exit · Esc = skip intro',
+        touchHelp: 'Tap = walk/look · long-press = use/take · Esc (top right) = skip intro · long-press the middle (♪) icon at the bottom to save/load',
+        pcHelp: 'Left-click = walk/look · right-click = use/take · Esc = skip intro · F5, or right-click the middle (♪) icon at the bottom, to save/load',
         origin: 'Sołtys © 1995 Laboratorium Komputerowe Avalon — released as freeware by its copyright holder in 2011. The English v1.0 is the official translation the original author, Janusz Wiśniewski, took part in; the Korean subtitles are made from it.',
       },
     },

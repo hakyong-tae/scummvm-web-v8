@@ -112,6 +112,13 @@ Soltys(cge) 진행 상황·함정은 `docs/NEXT-GAME-CGE.md` §7~§11.
 - **캔버스 픽셀을 JS(`drawImage`/`getImageData`)로 읽으면 검은 화면이 나온다** — WebGL 드로잉 버퍼가 프레임 밖에서 비어 있다.
   간헐적으로 맞는 값이 섞여 나와 더 헷갈린다. 화면 검증은 스크린샷을 찍어 디코드할 것(`tools/lib/png.mjs`).
 - **`scummvm.ini`는 IDBFS에 한 번 저장되면 다시 fetch 하지 않는다** — 그래서 게임은 ini 섹션이 아니라 `--path=` 인자로 띄운다(26-09-09).
+- **자동저장 주기(`autosave_period`)는 ScummVM 기본값이 5분이다.** 클라우드 동기화는 5초 폴링이라 빠르지만,
+  저장 파일 자체가 5분에 한 번만 바뀌면 체감상 실시간이 아니다. `scummvm.ini`에 `autosave_period=60`을 명시(26-09-10).
+  ⚠️ ini는 IDBFS에 한 번 저장되면 재fetch 안 하므로, **이미 켜 본 브라우저에는 반영되지 않는다**(사이트 데이터 삭제 필요).
+- **CGE(Soltys)의 저장/불러오기는 하단 패널 가운데 아이콘(음표, 게임 좌표 약 160,178)을 우클릭/길게 누르면 열리는
+  ScummVM 표준 GMM**(Resume/Load/Save/Options/…)이다. Lure처럼 자체 세이브 UI가 아니라 제네릭 GUI 테마 오버레이라서
+  **영문 그대로**이고 우리 DOM 자막 레이어(webtext 훅)로 잡히지 않는다(Talk/InfoLine을 거치지 않고 별도 GUI 렌더러가 그린다).
+  F5(저장)/F7(불러오기) 키도 동일 경로. 자동저장 슬롯("0. Autosave on")은 플레이하면 저절로 생긴다.
 - **배포본이 어느 게임인지는 `<meta name="svm-game">`로 정한다.** `.env.production`(`VITE_GAME`)만 믿으면 안 된다 —
   V8 빌더가 production 모드로 돌지 않으면 적용되지 않아 **기본값(lure)으로 떨어진다**(26-09-09 실제로 Soltys 배포본이 Lure 타이틀로 떴다).
   `prepare-deploy.sh`가 meta를 게임별로 박고, `config.ts`는 `?game=` → meta → `VITE_GAME` → `lure` 순으로 읽는다.
